@@ -75,25 +75,28 @@ function buildEndLabels(labels, lastDate) {
 /**
  * Common layout settings shared between both charts.
  */
-function baseLayout(title) {
+function baseLayout(title, isMobile) {
   const year = new Date().getFullYear();
   return {
     title: {
       text: title,
-      font: { size: 20, family: "Inter, system-ui, -apple-system, sans-serif", color: "#f8fafc" },
+      font: { size: isMobile ? 14 : 20, family: "Inter, system-ui, -apple-system, sans-serif", color: "#f8fafc" },
       x: 0.02,
       xanchor: "left",
+      y: isMobile ? 0.98 : 0.95,
+      yanchor: "top"
     },
-    font: { family: "Inter, system-ui, -apple-system, sans-serif", color: "#f8fafc" },
+    font: { family: "Inter, system-ui, -apple-system, sans-serif", color: "#f8fafc", size: isMobile ? 10 : 12 },
     plot_bgcolor: "rgba(0,0,0,0)",
     paper_bgcolor: "rgba(0,0,0,0)",
-    margin: { l: 60, r: 140, t: 60, b: 50 },
+    margin: isMobile ? { l: 40, r: 20, t: 70, b: 140 } : { l: 60, r: 140, t: 60, b: 50 },
     xaxis: {
-      dtick: "M24",
+      dtick: isMobile ? "M48" : "M24",
       tickformat: "%Y",
       gridcolor: "rgba(255,255,255,0.06)",
       showline: false,
       zeroline: false,
+      tickangle: isMobile ? -45 : 0,
     },
     yaxis: {
       ticksuffix: "%",
@@ -105,9 +108,17 @@ function baseLayout(title) {
     hoverlabel: {
       bgcolor: "rgba(15, 23, 42, 0.9)",
       bordercolor: "rgba(255, 255, 255, 0.1)",
-      font: { color: "#f8fafc" }
+      font: { color: "#f8fafc", size: isMobile ? 10 : 13 }
     },
-    showlegend: false,
+    showlegend: isMobile,
+    legend: isMobile ? {
+      orientation: "h",
+      y: -0.3,
+      x: 0.5,
+      xanchor: "center",
+      itemwidth: 30,
+      font: { size: 10 }
+    } : undefined,
     hovermode: "x unified",
     annotations: [
       {
@@ -115,25 +126,25 @@ function baseLayout(title) {
         xref: "paper",
         yref: "paper",
         x: 1,
-        y: 1.06,
+        y: isMobile ? 1.05 : 1.06,
         showarrow: false,
-        font: { size: 9, color: "rgba(255,255,255,0.4)" },
+        font: { size: isMobile ? 8 : 9, color: "rgba(255,255,255,0.4)" },
         xanchor: "right",
       },
     ],
   };
 }
 
-const PLOTLY_CONFIG = {
-  responsive: true,
-  displayModeBar: true,
-  modeBarButtonsToRemove: ["lasso2d", "select2d"],
-};
+function getPlotlyConfig(isMobile) {
+  return {
+    responsive: true,
+    displayModeBar: !isMobile,
+    modeBarButtonsToRemove: ["lasso2d", "select2d"],
+  };
+}
 
-/**
- * Render the major parties trend chart.
- */
 export function renderPartiesChart(containerId, data) {
+  const isMobile = window.innerWidth <= 768;
   const dates = data.map((d) => d.date);
   const traces = [];
   const endLabels = [];
@@ -148,7 +159,7 @@ export function renderPartiesChart(containerId, data) {
       x: dates,
       y: smoothed,
       mode: "lines",
-      line: { color: info.color, width: 2.5 },
+      line: { color: info.color, width: isMobile ? 2.0 : 2.5 },
       name: info.label,
       hovertemplate: `${info.label}: %{y:.1f}%<extra></extra>`,
     });
@@ -160,7 +171,10 @@ export function renderPartiesChart(containerId, data) {
   }
 
   const year = new Date().getFullYear();
-  const layout = baseLayout(`Major German Parties Polling (1991\u2013${year})`);
+  const titleText = isMobile 
+    ? `Major Parties<br>(1991\u2013${year})`
+    : `Major German Parties Polling (1991\u2013${year})`;
+  const layout = baseLayout(titleText, isMobile);
 
   const maxVal = Math.max(...data.map((d) =>
     Math.max(...MAJOR_PARTIES.map((p) => d[p] || 0))
@@ -173,16 +187,17 @@ export function renderPartiesChart(containerId, data) {
   layout.annotations = [
     ...layout.annotations,
     ...markers.annotations,
-    ...buildEndLabels(endLabels, dates[dates.length - 1]),
   ];
 
-  Plotly.newPlot(containerId, traces, layout, PLOTLY_CONFIG);
+  if (!isMobile) {
+    layout.annotations.push(...buildEndLabels(endLabels, dates[dates.length - 1]));
+  }
+
+  Plotly.react(containerId, traces, layout, getPlotlyConfig(isMobile));
 }
 
-/**
- * Render the political blocks trend chart.
- */
 export function renderBlocksChart(containerId, data) {
+  const isMobile = window.innerWidth <= 768;
   const dates = data.map((d) => d.date);
   const traces = [];
   const endLabels = [];
@@ -195,7 +210,7 @@ export function renderBlocksChart(containerId, data) {
       x: dates,
       y: smoothed,
       mode: "lines",
-      line: { color: blockInfo.color, width: 2.5 },
+      line: { color: blockInfo.color, width: isMobile ? 2.0 : 2.5 },
       fill: "tozeroy",
       fillcolor: blockInfo.color + "14",
       name: blockInfo.label,
@@ -209,7 +224,10 @@ export function renderBlocksChart(containerId, data) {
   }
 
   const year = new Date().getFullYear();
-  const layout = baseLayout(`Political Spectrum in Germany (1991\u2013${year}) \u2014 Blocks`);
+  const titleText = isMobile
+    ? `Political Blocks<br>(1991\u2013${year})`
+    : `Political Spectrum in Germany (1991\u2013${year}) \u2014 Blocks`;
+  const layout = baseLayout(titleText, isMobile);
 
   const maxVal = Math.max(...data.map((d) =>
     Math.max(...Object.keys(BLOCKS).map((b) => d[b] || 0))
@@ -222,8 +240,11 @@ export function renderBlocksChart(containerId, data) {
   layout.annotations = [
     ...layout.annotations,
     ...markers.annotations,
-    ...buildEndLabels(endLabels, dates[dates.length - 1]),
   ];
 
-  Plotly.newPlot(containerId, traces, layout, PLOTLY_CONFIG);
+  if (!isMobile) {
+    layout.annotations.push(...buildEndLabels(endLabels, dates[dates.length - 1]));
+  }
+
+  Plotly.react(containerId, traces, layout, getPlotlyConfig(isMobile));
 }

@@ -10,8 +10,20 @@ async function init() {
     const { data, updated } = await loadPollingData();
     const enrichedData = computeBlocks(data);
 
-    renderPartiesChart("parties-chart", enrichedData);
-    renderBlocksChart("blocks-chart", enrichedData);
+    const renderAll = () => {
+      renderPartiesChart("parties-chart", enrichedData);
+      renderBlocksChart("blocks-chart", enrichedData);
+    };
+
+    renderAll();
+
+    let resizeTimer;
+    window.addEventListener("resize", () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        renderAll();
+      }, 250);
+    });
 
     const updatedDate = new Date(updated);
     statusEl.innerHTML = `<span>Data updated: ${updatedDate.toLocaleDateString("en-GB", {
