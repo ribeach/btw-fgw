@@ -7,7 +7,7 @@ const MS_PER_DAY = 86400000;
  * Returns { data: [{date: Date, cdu: number, ...}, ...], updated: string }
  */
 export async function loadPollingData() {
-  const resp = await fetch("https://github.com/ribeach/btw-fgw/releases/download/latest-data/polling.json");
+  const resp = await fetch("data/polling.json");
   if (!resp.ok) throw new Error(`Failed to load data: ${resp.status}`);
   const json = await resp.json();
   const data = json.data.map((row) => ({
