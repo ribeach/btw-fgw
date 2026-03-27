@@ -44,16 +44,40 @@ EXCEL_COLUMNS: dict[str, str] = {
 }
 
 OUTPUT_PATH = Path(__file__).resolve().parent.parent / "docs" / "data" / "polling.json"
+ETAG_PATH = Path(__file__).resolve().parent.parent / "docs" / "data" / ".etag"
+
+
+def fetch_excel() -> bytes | None:
+    """Fetch the Excel file, skipping download if unchanged (HTTP 304)."""
+    headers = {}
+    if ETAG_PATH.exists():
+        headers["If-None-Match"] = ETAG_PATH.read_text().strip()
+
+    print(f"Fetching {EXCEL_URL}...")
+    with httpx.Client(follow_redirects=True, timeout=30.0) as client:
+        resp = client.get(EXCEL_URL, headers=headers)
+
+    if resp.status_code == 304:
+        print("File unchanged (304 Not Modified), skipping.")
+        return None
+
+    resp.raise_for_status()
+
+    etag = resp.headers.get("etag")
+    if etag:
+        ETAG_PATH.parent.mkdir(parents=True, exist_ok=True)
+        ETAG_PATH.write_text(etag)
+
+    return resp.content
 
 
 def fetch_and_convert() -> None:
-    print(f"Fetching {EXCEL_URL}...")
-    with httpx.Client(follow_redirects=True, timeout=30.0) as client:
-        resp = client.get(EXCEL_URL)
-        resp.raise_for_status()
+    content = fetch_excel()
+    if content is None:
+        return
 
     df = pd.read_excel(
-        io.BytesIO(resp.content),
+        io.BytesIO(content),
         sheet_name="Tabelle1",
         header=None,
         skiprows=9,
