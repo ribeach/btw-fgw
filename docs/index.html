@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>German Polling Trends — Politbarometer</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.plot.ly/plotly-basic-2.35.3.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>German Federal Election Polling Trends</h1>
+      <p>Politbarometer data from Forschungsgruppe Wahlen</p>
+    </header>
+
+    <div id="status">Loading&hellip;</div>
+    <div id="error"></div>
+
+    <div class="chart-container">
+      <div id="parties-chart"></div>
+    </div>
+
+    <div class="chart-container">
+      <div id="blocks-chart"></div>
+    </div>
+
+    <footer>
+      Data source: <a href="https://www.forschungsgruppe.de" target="_blank" rel="noopener">Forschungsgruppe Wahlen</a>
+    </footer>
+  </div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
