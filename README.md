@@ -15,7 +15,7 @@ Charts are interactive: hover for exact values, zoom and pan to explore the data
 
 The site is a static HTML/CSS/JS app hosted on GitHub Pages — no framework, no build step.
 
-A daily [GitHub Action](.github/workflows/update-data.yml) fetches the latest Excel workbook from Forschungsgruppe Wahlen, converts it to JSON, and commits the result. The website loads this JSON and renders the charts client-side using [Plotly.js](https://plotly.com/javascript/).
+A daily [GitHub Action](.github/workflows/update-data.yml) fetches the latest Excel workbook from Forschungsgruppe Wahlen, converts it to JSON, and uploads it as a GitHub Release. The website loads this JSON and renders the charts client-side using [Plotly.js](https://plotly.com/javascript/).
 
 ## Local Development
 
@@ -37,6 +37,5 @@ This dashboard is fully EU GDPR compliant. The application does not use any trac
 
 ## License
 
-**Software:** The source code of this repository is provided under the [MIT License](LICENSE).
+The source code of this repository is provided under the [MIT License](LICENSE).
 
-**Data:** This project fetches and renders data published by *Forschungsgruppe Wahlen*. The raw and processed data in the `docs/data/` folder is **not** covered by the MIT License. The data remains the property of Forschungsgruppe Wahlen and is subject to their copyright and terms of use (available on [their website](https://www.forschungsgruppe.de/)). Please consult their policies before reusing the dataset.
