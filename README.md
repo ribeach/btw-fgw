@@ -31,6 +31,10 @@ python3 -m http.server -d docs
 
 Then open http://localhost:8000.
 
+## Privacy & GDPR Compliance
+
+This dashboard is fully EU GDPR compliant. The application does not use any tracking scripts (such as Google Analytics), does not set any cookies, and completely self-hosts all necessary assets (fonts and JS libraries). When you visit the site, your browser only connects to GitHub Pages to serve the static assets.
+
 ## License
 
 See [LICENSE](LICENSE).
