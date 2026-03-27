@@ -37,4 +37,6 @@ This dashboard is fully EU GDPR compliant. The application does not use any trac
 
 ## License
 
-See [LICENSE](LICENSE).
+**Software:** The source code of this repository is provided under the [MIT License](LICENSE).
+
+**Data:** This project fetches and renders data published by *Forschungsgruppe Wahlen*. The raw and processed data in the `docs/data/` folder is **not** covered by the MIT License. The data remains the property of Forschungsgruppe Wahlen and is subject to their copyright and terms of use (available on [their website](https://www.forschungsgruppe.de/)). Please consult their policies before reusing the dataset.
