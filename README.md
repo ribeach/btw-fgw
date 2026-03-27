@@ -20,7 +20,9 @@ A daily [GitHub Action](.github/workflows/update-data.yml) fetches the latest Ex
 Refresh the data and start a local server:
 
 ```bash
-pip install httpx pandas openpyxl
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
 python3 scripts/fetch_data.py
 python3 -m http.server -d docs
 ```

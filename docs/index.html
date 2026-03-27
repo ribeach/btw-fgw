@@ -3,30 +3,35 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Interactive dashboard mapping German Federal Election Polling Trends from Forschungsgruppe Wahlen (Politbarometer)">
   <title>German Polling Trends — Politbarometer</title>
   <link rel="stylesheet" href="css/style.css">
-  <script src="https://cdn.plot.ly/plotly-basic-2.35.3.min.js"></script>
+  <script src="js/vendor/plotly.min.js"></script>
 </head>
 <body>
   <div class="container">
     <header>
       <h1>German Federal Election Polling Trends</h1>
-      <p>Politbarometer data from Forschungsgruppe Wahlen</p>
+      <p>Politbarometer data from <a href="https://www.forschungsgruppe.de" target="_blank" rel="noopener">Forschungsgruppe Wahlen</a></p>
     </header>
 
-    <div id="status">Loading&hellip;</div>
+    <div id="status" class="status-box">
+      <div class="spinner"></div> <span>Loading…</span>
+    </div>
     <div id="error"></div>
 
-    <div class="chart-container">
-      <div id="parties-chart"></div>
-    </div>
+    <main>
+      <div class="chart-container">
+        <div id="parties-chart"></div>
+      </div>
 
-    <div class="chart-container">
-      <div id="blocks-chart"></div>
-    </div>
+      <div class="chart-container">
+        <div id="blocks-chart"></div>
+      </div>
+    </main>
 
     <footer>
-      Data source: <a href="https://www.forschungsgruppe.de" target="_blank" rel="noopener">Forschungsgruppe Wahlen</a>
+      Updated automatically via GitHub Actions • Data source: <a href="https://www.forschungsgruppe.de" target="_blank" rel="noopener">Forschungsgruppe Wahlen</a>
     </footer>
   </div>
 

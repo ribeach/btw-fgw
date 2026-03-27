@@ -6,7 +6,7 @@ async function init() {
   const errorEl = document.getElementById("error");
 
   try {
-    statusEl.textContent = "Loading data\u2026";
+    statusEl.innerHTML = '<div class="spinner"></div> <span>Loading data\u2026</span>';
     const { data, updated } = await loadPollingData();
     const enrichedData = computeBlocks(data);
 
@@ -14,11 +14,11 @@ async function init() {
     renderBlocksChart("blocks-chart", enrichedData);
 
     const updatedDate = new Date(updated);
-    statusEl.textContent = `Data updated: ${updatedDate.toLocaleDateString("en-GB", {
+    statusEl.innerHTML = `<span>Data updated: ${updatedDate.toLocaleDateString("en-GB", {
       year: "numeric",
       month: "long",
       day: "numeric",
-    })}`;
+    })}</span>`;
     statusEl.classList.add("success");
   } catch (err) {
     console.error(err);
