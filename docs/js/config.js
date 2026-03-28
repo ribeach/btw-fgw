@@ -36,5 +36,5 @@ export const ELECTION_DATES = [
   "2025-02-23",
 ];
 
-// Smoothing window in days (matches Python script's "90D" rolling window)
-export const SMOOTHING_WINDOW_DAYS = 90;
+// EWMA halflife in days: a poll from 30 days ago gets half the weight of today's
+export const SMOOTHING_HALFLIFE_DAYS = 30;

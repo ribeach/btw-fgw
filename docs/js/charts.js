@@ -1,4 +1,4 @@
-import { PARTY_CONFIG, MAJOR_PARTIES, BLOCKS, ELECTION_DATES, SMOOTHING_WINDOW_DAYS } from "./config.js";
+import { PARTY_CONFIG, MAJOR_PARTIES, BLOCKS, ELECTION_DATES } from "./config.js";
 import { computeRollingAverage } from "./data.js";
 
 /**

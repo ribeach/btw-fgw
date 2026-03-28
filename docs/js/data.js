@@ -1,6 +1,7 @@
-import { PARTY_CONFIG, SMOOTHING_WINDOW_DAYS } from "./config.js";
+import { PARTY_CONFIG, SMOOTHING_HALFLIFE_DAYS } from "./config.js";
 
 const MS_PER_DAY = 86400000;
+const LN2 = Math.LN2;
 
 /**
  * Load polling data from the committed JSON file.
@@ -18,23 +19,17 @@ export async function loadPollingData() {
 }
 
 /**
- * Compute a time-based rolling average (matching pandas rolling("90D")).
- * Uses a backward-looking window of `windowDays` days from each data point.
+ * Compute an exponentially weighted moving average (EWMA).
+ * Recent polls carry more weight; a poll from `halflifeDays` ago gets half
+ * the weight of today's. α = 1 - exp(-ln(2) * Δt / halflife).
  */
-export function computeRollingAverage(dates, values, windowDays = SMOOTHING_WINDOW_DAYS) {
-  const windowMs = windowDays * MS_PER_DAY;
+export function computeRollingAverage(dates, values, halflifeDays = SMOOTHING_HALFLIFE_DAYS) {
   const result = new Array(values.length);
-  for (let i = 0; i < values.length; i++) {
-    const currentMs = dates[i].getTime();
-    const windowStart = currentMs - windowMs;
-    let sum = 0;
-    let count = 0;
-    for (let j = i; j >= 0; j--) {
-      if (dates[j].getTime() < windowStart) break;
-      sum += values[j];
-      count++;
-    }
-    result[i] = count > 0 ? sum / count : 0;
+  result[0] = values[0];
+  for (let i = 1; i < values.length; i++) {
+    const dtDays = (dates[i].getTime() - dates[i - 1].getTime()) / MS_PER_DAY;
+    const alpha = 1 - Math.exp(-LN2 * dtDays / halflifeDays);
+    result[i] = alpha * values[i] + (1 - alpha) * result[i - 1];
   }
   return result;
 }
