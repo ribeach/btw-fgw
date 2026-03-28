@@ -17,9 +17,9 @@ export const MAJOR_PARTIES = ["cdu", "spd", "gruene", "fdp", "linke", "afd", "bs
 
 // Block definitions for the political blocks chart
 export const BLOCKS = {
-  right: { label: "Right-leaning (CDU/CSU + AfD)",      color: "#004B87" },
-  left:  { label: "Left-leaning (SPD + Grüne + Linke)", color: "#D92121" },
-  other: { label: "Other (FDP + BSW + Others)",          color: "#7f8c8d" },
+  right: { label: "Right-leaning<br>(CDU/CSU + AfD)",      color: "#004B87" },
+  left:  { label: "Left-leaning<br>(SPD + Grüne + Linke)", color: "#D92121" },
+  other: { label: "Other<br>(FDP + BSW + Others)",          color: "#7f8c8d" },
 };
 
 // German federal election dates
