@@ -19,7 +19,7 @@ The site is a static HTML/CSS/JS application hosted on GitHub Pages with no fron
 ### Data Pipelines
 - **Federal Polling:** A daily GitHub Action fetches the latest Excel workbook from Forschungsgruppe Wahlen, converts it to JSON, and commits it to the repository.
 - **State Polling:** The same action fetches data from the Dawum API, computes weighted averages for each state, and updates the local JSON data.
-- **Demographics:** Historical data is extracted from official PDF publications using a one-off Python script and stored as JSON.
+- **Demographics:** Historical data is extracted from official [Bundeswahlleiterin Heft 4](https://www.bundeswahlleiterin.de/bundestagswahlen/2025/publikationen.html) publications using a Python script that fetches the PDF directly from the source and stores it as JSON.
 
 The website loads these JSON files and renders charts client-side using **Plotly.js** and custom SVG manipulations.
 
