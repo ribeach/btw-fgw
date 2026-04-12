@@ -133,6 +133,10 @@ def fetch_and_convert() -> None:
         surveys = surveys_by_parliament.get(pid, [])
         election = election_data.get(state_id, {})
 
+        election_date = election.get("date", "")
+        # Filter out surveys that are older than or equal to the last election
+        surveys = [s for s in surveys if s.get("Date", "") > election_date]
+
         if surveys:
             left, right, diff, poll_date = compute_weighted_diff(surveys)
         else:
@@ -140,7 +144,7 @@ def fetch_and_convert() -> None:
             left = round(election.get("left", 0.0), 1)
             right = round(election.get("right", 0.0), 1)
             diff = round(left - right, 1)
-            poll_date = election.get("date", "")
+            poll_date = election_date
 
         election_diff = round(election.get("left", 0.0) - election.get("right", 0.0), 1)
         change = round(diff - election_diff, 1)

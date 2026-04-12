@@ -1,19 +1,26 @@
 """
 Extract demographic election data from Bundeswahlleiterin Heft 4 PDF.
 
-Parses "Ubersicht 9: Zweitstimmen nach Geschlecht und Altersgruppen seit 1953"
-from pages 3-11 of btw25_heft4.pdf and outputs docs/data/demographics.json.
+Parses "Übersicht 9: Zweitstimmen nach Geschlecht und Altersgruppen seit 1953"
+from pages 15-23 of the Bundeswahlleiterin Heft 4 PDF
+and outputs docs/data/demographics.json.
 
-One-time script — the JSON output is committed and treated as the source of truth.
+Source Publication Page:
+https://www.bundeswahlleiterin.de/bundestagswahlen/2025/publikationen.html
+
+PDF URL:
+https://www.bundeswahlleiterin.de/dam/jcr/63623bc5-20fc-449f-a032-7ecd508f04ad/btw25_heft4.pdf
 """
 
+import io
 import json
 import re
 from pathlib import Path
 
+import httpx
 import pdfplumber
 
-PDF_PATH = Path(__file__).parent.parent / "btw25_heft4.pdf"
+PDF_URL = "https://www.bundeswahlleiterin.de/dam/jcr/63623bc5-20fc-449f-a032-7ecd508f04ad/btw25_heft4.pdf"
 OUTPUT_PATH = Path(__file__).parent.parent / "docs" / "data" / "demographics.json"
 
 PARTY_COLUMNS = ["spd", "cdu", "gruene", "fdp", "afd", "csu", "linke", "sonstige"]
@@ -86,7 +93,12 @@ def parse_values(text, year):
 
 
 def extract_demographics():
-    pdf = pdfplumber.open(PDF_PATH)
+    print(f"Downloading {PDF_URL}...")
+    response = httpx.get(PDF_URL, follow_redirects=True)
+    response.raise_for_status()
+    pdf_file = io.BytesIO(response.content)
+
+    pdf = pdfplumber.open(pdf_file)
 
     result = {
         "insgesamt": {},
@@ -97,7 +109,7 @@ def extract_demographics():
     current_gender = None
     current_year = None
 
-    for page_idx in range(2, 11):  # Pages 3-11 (0-indexed)
+    for page_idx in range(14, 23):  # Pages 15-23 (0-indexed)
         page = pdf.pages[page_idx]
         text = page.extract_text()
         if not text:
