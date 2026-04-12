@@ -7,7 +7,7 @@ An interactive dashboard providing insights into German federal and state electi
 ## Features
 
 - **Federal Polling Trends** — Interactive charts showing smoothed polling data from *Forschungsgruppe Wahlen / Politbarometer* for major parties and political blocks.
-- **State Polling Map** — A regional view of Germany showing the "left-vs-right" polling balance in each Bundesland, based on recent state-level surveys from *dawum.de*.
+- **State Polling Map** — A regional view of Germany showing the "left-vs-right" polling balance in each Bundesland, based on recent state-level surveys from *dawum.de*. Summary statistics (West/East/Total) are population-weighted for a more representative overview.
 - **Historical Demographics** — Long-term analysis of Bundestag election voting patterns by age and gender (1953–present), based on *Bundeswahlleiterin Heft 4*.
 
 All charts are interactive: hover for exact values, zoom and pan to explore the data.
@@ -18,7 +18,8 @@ The site is a static HTML/CSS/JS application hosted on GitHub Pages with no fron
 
 ### Data Pipelines
 - **Federal Polling:** A daily GitHub Action fetches the latest Excel workbook from Forschungsgruppe Wahlen, converts it to JSON, and commits it to the repository.
-- **State Polling:** The same action fetches data from the Dawum API, computes weighted averages for each state, and updates the local JSON data.
+- **State Polling:** The same action fetches data from the Dawum API, computes weighted averages for each state, and updates the local JSON data. Summary statistics for political blocks are weighted by the latest state population data from Destatis.
+- **Population Data:** A manual script (`scripts/fetch_population.py`) fetches official state population data from the Federal Statistical Office (Destatis) via the `pystatis` library and stores it as `docs/data/population.json`.
 - **Demographics:** Historical data is extracted from official [Bundeswahlleiterin Heft 4](https://www.bundeswahlleiterin.de/bundestagswahlen/2025/publikationen.html) publications using a Python script that fetches the PDF directly from the source and stores it as JSON.
 
 The website loads these JSON files and renders charts client-side using **Plotly.js** and custom SVG manipulations.
@@ -35,6 +36,10 @@ pip install -r requirements.txt
 # Optional: Refresh data (requires Python 3.11+)
 python3 scripts/fetch_data.py
 python3 scripts/fetch_state_data.py
+
+# Optional: Refresh population data (requires a GENESIS-Online API token in .env)
+# Create a .env file with PYSTATIS_GENESIS_API_USERNAME=your_token
+python3 scripts/fetch_population.py
 
 # Start local server
 python3 -m http.server -d docs

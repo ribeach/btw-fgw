@@ -1,10 +1,10 @@
 {
-  "updated": "2026-04-12T11:24:35Z",
+  "updated": "2026-04-12T12:13:16Z",
   "source": "dawum.de (ODC-ODbL)",
   "summary": {
-    "avg_diff": -13.2,
-    "west_avg": -7.8,
-    "east_avg": -22.3,
+    "avg_diff": -16.0,
+    "west_avg": -14.5,
+    "east_avg": -21.9,
     "max_state": "DE-HH",
     "max_state_name": "Hamburg",
     "max_diff": 32.0,

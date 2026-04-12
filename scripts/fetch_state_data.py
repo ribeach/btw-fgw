@@ -14,6 +14,7 @@ LAST_UPDATE_URL = "https://api.dawum.de/last_update.txt"
 
 OUTPUT_PATH = Path(__file__).resolve().parent.parent / "docs" / "data" / "state-polling.json"
 LAST_UPDATE_PATH = Path(__file__).resolve().parent.parent / "docs" / "data" / "state-polling.last_update.txt"
+POPULATION_PATH = Path(__file__).resolve().parent.parent / "docs" / "data" / "population.json"
 ELECTION_RESULTS_PATH = Path(__file__).resolve().parent / "state_election_results.json"
 
 # dawum Parliament IDs for the 16 Bundesländer (0 = Bundestag, 17 = EU, skip those)
@@ -165,18 +166,28 @@ def fetch_and_convert() -> None:
             "change": change,
         })
 
-    # Summary stats
-    all_diffs = [s["diff"] for s in states]
-    west_diffs = [s["diff"] for s in states if s["id"] in WEST_STATES]
-    east_diffs = [s["diff"] for s in states if s["id"] in EAST_STATES]
+    # Summary stats weighted by population
+    pop_data = {}
+    if POPULATION_PATH.exists():
+        pop_data = json.loads(POPULATION_PATH.read_text()).get("data", {})
+
+    def weighted_avg(state_list):
+        total_pop = sum(pop_data.get(s["id"], 1.0) for s in state_list)
+        if total_pop == 0:
+            return 0.0
+        weighted_sum = sum(s["diff"] * pop_data.get(s["id"], 1.0) for s in state_list)
+        return round(weighted_sum / total_pop, 1)
+
+    west_states_list = [s for s in states if s["id"] in WEST_STATES]
+    east_states_list = [s for s in states if s["id"] in EAST_STATES]
 
     max_state = max(states, key=lambda s: s["diff"])
     min_state = min(states, key=lambda s: s["diff"])
 
     summary = {
-        "avg_diff": round(sum(all_diffs) / len(all_diffs), 1),
-        "west_avg": round(sum(west_diffs) / len(west_diffs), 1) if west_diffs else 0.0,
-        "east_avg": round(sum(east_diffs) / len(east_diffs), 1) if east_diffs else 0.0,
+        "avg_diff": weighted_avg(states),
+        "west_avg": weighted_avg(west_states_list),
+        "east_avg": weighted_avg(east_states_list),
         "max_state": max_state["id"],
         "max_state_name": max_state["name"],
         "max_diff": max_state["diff"],
