@@ -1,21 +1,199 @@
 {
-  "note": "Last Landtagswahl results per state. Left = SPD + Grüne + Linke, Right = CDU/CSU + AfD. Source: official state election authorities (Landeswahlleiter). Update manually after each new Landtagswahl.",
+  "note": "Verified latest state-parliament election results per state. left = SPD + GRUENE + LINKE; right = CDU/CSU + AfD. The aggregate left/right values are rounded to one decimal for compatibility with the existing scripts.",
+  "verified_on": "2026-04-12",
+  "methodology": "Use the official state-wide party vote basis reported by the election authority: Landesstimmen/Zweitstimmen where applicable, Gesamtstimmen in Bayern, summed Listen- und Personenstimmen in Bremen, and the single official party vote in one-vote systems. Bremen 2023 had no AfD list on the ballot, so right equals CDU there.",
   "states": {
-    "DE-BW": { "name": "Baden-Württemberg", "date": "2021-03-14", "left": 47.2, "right": 33.8 },
-    "DE-BY": { "name": "Bayern",             "date": "2023-10-08", "left": 19.1, "right": 51.6 },
-    "DE-BE": { "name": "Berlin",             "date": "2023-02-12", "left": 44.5, "right": 37.3 },
-    "DE-BB": { "name": "Brandenburg",        "date": "2024-09-22", "left": 38.0, "right": 41.3 },
-    "DE-HB": { "name": "Bremen",             "date": "2023-05-14", "left": 52.7, "right": 35.6 },
-    "DE-HH": { "name": "Hamburg",            "date": "2025-03-02", "left": 49.4, "right": 37.4 },
-    "DE-HE": { "name": "Hessen",             "date": "2023-10-08", "left": 33.0, "right": 53.0 },
-    "DE-MV": { "name": "Mecklenburg-Vorpommern", "date": "2021-09-26", "left": 55.8, "right": 30.0 },
-    "DE-NI": { "name": "Niedersachsen",      "date": "2022-10-09", "left": 50.6, "right": 39.1 },
-    "DE-NW": { "name": "Nordrhein-Westfalen","date": "2022-05-15", "left": 47.0, "right": 41.1 },
-    "DE-RP": { "name": "Rheinland-Pfalz",    "date": "2021-03-14", "left": 47.5, "right": 36.0 },
-    "DE-SL": { "name": "Saarland",           "date": "2022-03-27", "left": 51.1, "right": 34.2 },
-    "DE-SN": { "name": "Sachsen",            "date": "2024-09-01", "left": 16.9, "right": 62.5 },
-    "DE-ST": { "name": "Sachsen-Anhalt",     "date": "2021-06-06", "left": 25.3, "right": 57.9 },
-    "DE-SH": { "name": "Schleswig-Holstein", "date": "2022-05-08", "left": 36.0, "right": 48.6 },
-    "DE-TH": { "name": "Thüringen",          "date": "2024-09-01", "left": 22.4, "right": 56.4 }
+    "DE-BW": {
+      "name": "Baden-Württemberg",
+      "date": "2026-03-08",
+      "left": 40.1,
+      "right": 48.5,
+      "vote_basis": "Zweitstimmen",
+      "components": {
+        "left": { "SPD": 5.5, "GRUENE": 30.2, "LINKE": 4.4 },
+        "right": { "UNION": 29.7, "AFD": 18.8 }
+      },
+      "source": "https://im.baden-wuerttemberg.de/de/service/presse-und-oeffentlichkeitsarbeit/pressemitteilung/pid/endgueltiges-landesergebnis-der-landtagswahl-2026-festgestellt"
+    },
+    "DE-BY": {
+      "name": "Bayern",
+      "date": "2023-10-08",
+      "left": 24.3,
+      "right": 51.6,
+      "vote_basis": "Gesamtstimmen",
+      "components": {
+        "left": { "SPD": 8.4, "GRUENE": 14.4, "LINKE": 1.5 },
+        "right": { "UNION": 37.0, "AFD": 14.6 }
+      },
+      "source": "https://www.landtagswahl2023.bayern.de/ergebnis_tabelle_990.html"
+    },
+    "DE-BE": {
+      "name": "Berlin",
+      "date": "2023-02-12",
+      "left": 49.0,
+      "right": 37.3,
+      "vote_basis": "Zweitstimmen",
+      "components": {
+        "left": { "SPD": 18.4, "GRUENE": 18.4, "LINKE": 12.2 },
+        "right": { "UNION": 28.2, "AFD": 9.1 }
+      },
+      "source": "https://www.wahlen-berlin.de/wahlen/Be2023/AFSPRAES/agh/WB/SB_B07-02-03_2023j05_BE.pdf"
+    },
+    "DE-BB": {
+      "name": "Brandenburg",
+      "date": "2024-09-22",
+      "left": 38.0,
+      "right": 41.3,
+      "vote_basis": "Zweitstimmen",
+      "components": {
+        "left": { "SPD": 30.89, "GRUENE": 4.13, "LINKE": 2.98 },
+        "right": { "UNION": 12.1, "AFD": 29.23 }
+      },
+      "source": "https://wahlen.brandenburg.de/wahlen/de/pressemitteilungen/detail/~07-10-2024-endgueltiges-ergebnis-ltw-24"
+    },
+    "DE-HB": {
+      "name": "Bremen",
+      "date": "2023-05-14",
+      "left": 52.6,
+      "right": 26.2,
+      "vote_basis": "sum of list and personal votes",
+      "components": {
+        "left": { "SPD": 29.7973, "GRUENE": 11.8888, "LINKE": 10.8929 },
+        "right": { "UNION": 26.2187, "AFD": 0.0 }
+      },
+      "source": "https://www.wahlen.bremen.de/sixcms/media.php/13/2023-06-01%20PM_LWL_EndgueltigeErgebnisse.pdf"
+    },
+    "DE-HH": {
+      "name": "Hamburg",
+      "date": "2025-03-02",
+      "left": 63.2,
+      "right": 27.3,
+      "vote_basis": "Landesstimmen",
+      "components": {
+        "left": { "SPD": 33.5, "GRUENE": 18.5, "LINKE": 11.2 },
+        "right": { "UNION": 19.8, "AFD": 7.5 }
+      },
+      "source": "https://www.wahlen-hamburg.de/B%C3%BCrgerschaftswahl_2025/"
+    },
+    "DE-HE": {
+      "name": "Hessen",
+      "date": "2023-10-08",
+      "left": 33.0,
+      "right": 53.0,
+      "vote_basis": "Landesstimmen",
+      "components": {
+        "left": { "SPD": 15.1, "GRUENE": 14.8, "LINKE": 3.1 },
+        "right": { "UNION": 34.6, "AFD": 18.4 }
+      },
+      "source": "https://wahlen.hessen.de/endgueltiges-ergebnis-der-landtagswahl-in-hessen"
+    },
+    "DE-MV": {
+      "name": "Mecklenburg-Vorpommern",
+      "date": "2021-09-26",
+      "left": 55.8,
+      "right": 30.0,
+      "vote_basis": "official party vote",
+      "components": {
+        "left": { "SPD": 39.6, "GRUENE": 6.3, "LINKE": 9.9 },
+        "right": { "UNION": 13.3, "AFD": 16.7 }
+      },
+      "source": "https://www.laiv-mv.de/Wahlen/Landtagswahlen/2021/"
+    },
+    "DE-NI": {
+      "name": "Niedersachsen",
+      "date": "2022-10-09",
+      "left": 50.6,
+      "right": 39.1,
+      "vote_basis": "Zweitstimmen",
+      "components": {
+        "left": { "SPD": 33.4, "GRUENE": 14.5, "LINKE": 2.7 },
+        "right": { "UNION": 28.1, "AFD": 11.0 }
+      },
+      "source": "https://wahlen.statistik.niedersachsen.de/LW2022/LW/000.pdf"
+    },
+    "DE-NW": {
+      "name": "Nordrhein-Westfalen",
+      "date": "2022-05-15",
+      "left": 47.0,
+      "right": 41.1,
+      "vote_basis": "Zweitstimmen",
+      "components": {
+        "left": { "SPD": 26.7, "GRUENE": 18.2, "LINKE": 2.1 },
+        "right": { "UNION": 35.7, "AFD": 5.4 }
+      },
+      "source": "https://www.im.nrw/endgueltiges-ergebnis-der-landtagswahl-2022-festgestellt-0"
+    },
+    "DE-RP": {
+      "name": "Rheinland-Pfalz",
+      "date": "2026-03-22",
+      "left": 38.2,
+      "right": 50.5,
+      "vote_basis": "Landesstimmen",
+      "components": {
+        "left": { "SPD": 25.9, "GRUENE": 7.9, "LINKE": 4.4 },
+        "right": { "UNION": 31.0, "AFD": 19.5 }
+      },
+      "source": "https://www.wahlen.rlp.de/nachrichten/nachichtendetailseite/endgueltiges-ergebnis-der-landtagswahl-2026-steht-fest"
+    },
+    "DE-SL": {
+      "name": "Saarland",
+      "date": "2022-03-27",
+      "left": 51.1,
+      "right": 34.2,
+      "vote_basis": "official party vote",
+      "components": {
+        "left": { "SPD": 43.5, "GRUENE": 4.99502, "LINKE": 2.6 },
+        "right": { "UNION": 28.5, "AFD": 5.7 }
+      },
+      "source": "https://wahlergebnis.saarland.de/LTW/"
+    },
+    "DE-SN": {
+      "name": "Sachsen",
+      "date": "2024-09-01",
+      "left": 16.9,
+      "right": 62.5,
+      "vote_basis": "Listenstimmen",
+      "components": {
+        "left": { "SPD": 7.3, "GRUENE": 5.1, "LINKE": 4.5 },
+        "right": { "UNION": 31.9, "AFD": 30.6 }
+      },
+      "source": "https://wahlen.sachsen.de/landtagswahl-2024-wahlergebnisse.php"
+    },
+    "DE-ST": {
+      "name": "Sachsen-Anhalt",
+      "date": "2021-06-06",
+      "left": 25.3,
+      "right": 57.9,
+      "vote_basis": "Zweitstimmen",
+      "components": {
+        "left": { "SPD": 8.4, "GRUENE": 5.9, "LINKE": 11.0 },
+        "right": { "UNION": 37.1, "AFD": 20.8 }
+      },
+      "source": "https://wahlergebnisse.sachsen-anhalt.de/wahlen/lt21/and/lt21_endg.pdf"
+    },
+    "DE-SH": {
+      "name": "Schleswig-Holstein",
+      "date": "2022-05-08",
+      "left": 36.0,
+      "right": 47.8,
+      "vote_basis": "Zweitstimmen",
+      "components": {
+        "left": { "SPD": 16.0, "GRUENE": 18.3, "LINKE": 1.7 },
+        "right": { "UNION": 43.4, "AFD": 4.4 }
+      },
+      "source": "https://www.statistik-nord.de/wahlen/wahlen-in-schleswig-holstein/landtagswahlen/landtagswahl-2022-in-schleswig-holstein"
+    },
+    "DE-TH": {
+      "name": "Thüringen",
+      "date": "2024-09-01",
+      "left": 22.4,
+      "right": 56.4,
+      "vote_basis": "Landesstimme",
+      "components": {
+        "left": { "SPD": 6.1, "GRUENE": 3.2, "LINKE": 13.1 },
+        "right": { "UNION": 23.6, "AFD": 32.8 }
+      },
+      "source": "https://wahlen.thueringen.de/datenbank/wahl1/wahl.asp?auswertung=1&gemteil=000&wJahr=2024&wahlart=LW&zeigeErg=LAND"
+    }
   }
 }

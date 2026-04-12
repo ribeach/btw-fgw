@@ -1,4 +1,4 @@
-import { COLOR_RIGHT, COLOR_NEUTRAL, COLOR_LEFT, COLOR_SCALE_MAX } from "./state-polling-config.js";
+import { COLOR_RIGHT, COLOR_NEUTRAL, COLOR_LEFT, COLOR_SCALE_MAX, COLOR_SCALE_POWER } from "./state-polling-config.js";
 
 /**
  * Interpolate between two hex colors.
@@ -24,10 +24,10 @@ function lerpColor(hex1, hex2, t) {
 export function diffToColor(diff) {
   const clamped = Math.max(-COLOR_SCALE_MAX, Math.min(COLOR_SCALE_MAX, diff));
   if (clamped < 0) {
-    const t = -clamped / COLOR_SCALE_MAX;
+    const t = Math.pow(-clamped / COLOR_SCALE_MAX, COLOR_SCALE_POWER);
     return lerpColor(COLOR_NEUTRAL, COLOR_RIGHT, t);
   } else {
-    const t = clamped / COLOR_SCALE_MAX;
+    const t = Math.pow(clamped / COLOR_SCALE_MAX, COLOR_SCALE_POWER);
     return lerpColor(COLOR_NEUTRAL, COLOR_LEFT, t);
   }
 }

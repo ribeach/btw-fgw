@@ -22,6 +22,9 @@ export const STATE_NAMES = {
 // Color scale range in percentage points
 export const COLOR_SCALE_MAX = 45;
 
+// Power exponent for color scale (0.5 = sqrt gives more contrast to smaller values; 1 = linear)
+export const COLOR_SCALE_POWER = 0.5;
+
 // Diverging color scale: negative diff → red (right leads), positive → blue (left leads)
 export const COLOR_RIGHT = "#b91c1c"; // red-700
 export const COLOR_NEUTRAL = "#475569"; // slate-600
