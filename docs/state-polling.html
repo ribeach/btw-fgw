@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Links-Rechts-Differenz (SPD+Grüne+Linke vs CDU/CSU+AfD) in den deutschen Bundesländern — aktuelle Umfragewerte von dawum.de">
+  <title>Bundesländer-Umfragen — Links vs. Rechts</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='5.33' fill='%23000'/%3E%3Crect y='5.33' width='16' height='5.33' fill='%23D00'/%3E%3Crect y='10.67' width='16' height='5.33' fill='%23FFCE00'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="state-polling">
+  <div class="container">
+    <header>
+      <h1>Bundesländer: Links vs. Rechts</h1>
+      <p>Differenz (SPD+Grüne+Linke) − (CDU/CSU+AfD) nach Bundesland — Daten von <a href="https://dawum.de" target="_blank" rel="noopener">dawum.de</a></p>
+      <nav class="page-nav">
+        <a href="index.html">Polling Trends</a>
+        <a href="demographics.html">Demographics</a>
+        <a href="state-polling.html" aria-current="page">State Polling</a>
+      </nav>
+    </header>
+
+    <div id="status" class="status-box">
+      <div class="spinner"></div> <span>Loading…</span>
+    </div>
+    <div id="error"></div>
+
+    <main>
+      <div id="segment-bar" class="segment-bar chart-container"></div>
+
+      <div class="maps-section chart-container">
+        <div class="maps-grid">
+          <div class="map-wrapper">
+            <h2 class="map-title">Aktuelle Umfragewerte</h2>
+            <p class="map-subtitle">Differenz Links − Rechts (pp)</p>
+            <div id="map-diff" class="map-container"></div>
+          </div>
+          <div class="map-wrapper">
+            <h2 class="map-title">Veränderung zur Landtagswahl</h2>
+            <p class="map-subtitle">Verschiebung in Prozentpunkten</p>
+            <div id="map-change" class="map-container"></div>
+          </div>
+        </div>
+        <div class="map-legend">
+          <span class="legend-item legend-right">Rechts führt</span>
+          <span class="legend-scale"></span>
+          <span class="legend-item legend-left">Links führt</span>
+        </div>
+      </div>
+
+      <div id="map-tooltip" class="map-tooltip" style="display:none;"></div>
+
+      <div class="chart-container">
+        <div id="table-container"></div>
+      </div>
+    </main>
+
+    <footer>
+      Updated automatically via GitHub Actions •
+      Umfragedaten: <a href="https://dawum.de" target="_blank" rel="noopener">dawum.de</a> (ODC-ODbL) •
+      Bundesland-Grenzen: <a href="https://github.com/isellsoap/deutschlandGeoJSON" target="_blank" rel="noopener">isellsoap/deutschlandGeoJSON</a> (MIT)
+    </footer>
+  </div>
+
+  <script type="module" src="js/state-polling-main.js"></script>
+</body>
+</html>

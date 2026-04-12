@@ -1,0 +1,21 @@
+{
+  "note": "Last Landtagswahl results per state. Left = SPD + Grüne + Linke, Right = CDU/CSU + AfD. Source: official state election authorities (Landeswahlleiter). Update manually after each new Landtagswahl.",
+  "states": {
+    "DE-BW": { "name": "Baden-Württemberg", "date": "2021-03-14", "left": 47.2, "right": 33.8 },
+    "DE-BY": { "name": "Bayern",             "date": "2023-10-08", "left": 19.1, "right": 51.6 },
+    "DE-BE": { "name": "Berlin",             "date": "2023-02-12", "left": 44.5, "right": 37.3 },
+    "DE-BB": { "name": "Brandenburg",        "date": "2024-09-22", "left": 38.0, "right": 41.3 },
+    "DE-HB": { "name": "Bremen",             "date": "2023-05-14", "left": 52.7, "right": 35.6 },
+    "DE-HH": { "name": "Hamburg",            "date": "2025-03-02", "left": 49.4, "right": 37.4 },
+    "DE-HE": { "name": "Hessen",             "date": "2023-10-08", "left": 33.0, "right": 53.0 },
+    "DE-MV": { "name": "Mecklenburg-Vorpommern", "date": "2021-09-26", "left": 55.8, "right": 30.0 },
+    "DE-NI": { "name": "Niedersachsen",      "date": "2022-10-09", "left": 50.6, "right": 39.1 },
+    "DE-NW": { "name": "Nordrhein-Westfalen","date": "2022-05-15", "left": 47.0, "right": 41.1 },
+    "DE-RP": { "name": "Rheinland-Pfalz",    "date": "2021-03-14", "left": 47.5, "right": 36.0 },
+    "DE-SL": { "name": "Saarland",           "date": "2022-03-27", "left": 51.1, "right": 34.2 },
+    "DE-SN": { "name": "Sachsen",            "date": "2024-09-01", "left": 16.9, "right": 62.5 },
+    "DE-ST": { "name": "Sachsen-Anhalt",     "date": "2021-06-06", "left": 25.3, "right": 57.9 },
+    "DE-SH": { "name": "Schleswig-Holstein", "date": "2022-05-08", "left": 36.0, "right": 48.6 },
+    "DE-TH": { "name": "Thüringen",          "date": "2024-09-01", "left": 22.4, "right": 56.4 }
+  }
+}
