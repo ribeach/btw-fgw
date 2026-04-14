@@ -217,6 +217,11 @@ footer a:hover {
   background: rgba(56, 189, 248, 0.1);
 }
 
+/* Demographics chart: explicit height so Plotly's height:100% update doesn't collapse it */
+.demographics #demographics-chart {
+  height: 450px;
+}
+
 /* Demographics Page — Selection Panel */
 .demographics .selections-panel {
   background: var(--glass-bg);
@@ -374,7 +379,7 @@ footer a:hover {
     gap: 0.3rem;
   }
   .demographics #demographics-chart {
-    min-height: 350px;
+    height: 350px;
   }
 }
 
