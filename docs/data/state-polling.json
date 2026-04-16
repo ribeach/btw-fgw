@@ -1,9 +1,9 @@
 {
-  "updated": "2026-04-15T06:36:22Z",
+  "updated": "2026-04-16T06:37:12Z",
   "source": "dawum.de (ODC-ODbL)",
   "summary": {
-    "avg_diff": -15.6,
-    "west_avg": -14.1,
+    "avg_diff": -15.1,
+    "west_avg": -13.6,
     "east_avg": -21.8,
     "max_state": "DE-HH",
     "max_state_name": "Hamburg",
@@ -226,17 +226,17 @@
     {
       "id": "DE-SH",
       "name": "Schleswig-Holstein",
-      "left": 29.0,
-      "right": 53.0,
-      "diff": -24.0,
-      "poll_date": "2025-01-22",
+      "left": 37.0,
+      "right": 48.0,
+      "diff": -11.0,
+      "poll_date": "2026-04-16",
       "election": {
         "date": "2022-05-08",
         "left": 36.0,
         "right": 47.8,
         "diff": -11.8
       },
-      "change": -12.2
+      "change": 0.8
     },
     {
       "id": "DE-TH",
