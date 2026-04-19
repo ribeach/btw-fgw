@@ -45,6 +45,7 @@ EXCEL_COLUMNS: dict[str, str] = {
 
 OUTPUT_PATH = Path(__file__).resolve().parent.parent / "docs" / "data" / "polling.json"
 ETAG_PATH = Path(__file__).resolve().parent.parent / "docs" / "data" / ".etag"
+PRE_POLLING_PATH = Path(__file__).resolve().parent.parent / "docs" / "data" / "pre-polling.json"
 
 
 def fetch_excel() -> bytes | None:
@@ -71,9 +72,64 @@ def fetch_excel() -> bytes | None:
     return resp.content
 
 
+def load_pre_polling_records(cutoff_date: str | None = None) -> list[dict[str, object]]:
+    """Load archive rows that predate the fetched polling series."""
+    if not PRE_POLLING_PATH.exists():
+        return []
+
+    content = json.loads(PRE_POLLING_PATH.read_text(encoding="utf-8"))
+    records = content.get("data", [])
+    if cutoff_date is not None:
+        records = [record for record in records if record["date"] < cutoff_date]
+
+    return sorted(records, key=lambda record: record["date"])
+
+
+def merge_pre_polling_records(records: list[dict[str, object]]) -> list[dict[str, object]]:
+    pre_polling_records = load_pre_polling_records()
+    if not pre_polling_records:
+        return records
+
+    pre_polling_dates = {record["date"] for record in pre_polling_records}
+    current_records = [
+        record
+        for record in records
+        if record["date"] not in pre_polling_dates
+        and record["date"] > pre_polling_records[-1]["date"]
+    ]
+    cutoff_date = current_records[0]["date"] if current_records else None
+    return load_pre_polling_records(cutoff_date) + current_records
+
+
+def load_existing_records() -> list[dict[str, object]]:
+    if not OUTPUT_PATH.exists():
+        return []
+
+    content = json.loads(OUTPUT_PATH.read_text(encoding="utf-8"))
+    return content.get("data", [])
+
+
+def write_output(records: list[dict[str, object]]) -> None:
+    output = {
+        "updated": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "data": records,
+    }
+
+    OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
+    OUTPUT_PATH.write_text(json.dumps(output, indent=2), encoding="utf-8")
+    print(f"Wrote {len(records)} records to {OUTPUT_PATH}")
+
+
 def fetch_and_convert() -> None:
     content = fetch_excel()
     if content is None:
+        existing_records = load_existing_records()
+        records = merge_pre_polling_records(existing_records)
+        if records:
+            if records == existing_records:
+                print("Existing polling data already includes pre-polling records, skipping.")
+                return
+            write_output(records)
         return
 
     df = pd.read_excel(
@@ -110,14 +166,7 @@ def fetch_and_convert() -> None:
             record[party.value] = round(float(row[party.value]), 1)
         records.append(record)
 
-    output = {
-        "updated": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "data": records,
-    }
-
-    OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    OUTPUT_PATH.write_text(json.dumps(output, indent=2), encoding="utf-8")
-    print(f"Wrote {len(records)} records to {OUTPUT_PATH}")
+    write_output(merge_pre_polling_records(records))
 
 
 if __name__ == "__main__":
