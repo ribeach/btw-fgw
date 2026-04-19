@@ -170,10 +170,11 @@ export function renderPartiesChart(containerId, data) {
     });
   }
 
+  const startYear = dates[0].getFullYear();
   const year = new Date().getFullYear();
-  const titleText = isMobile 
-    ? `Major Parties<br>(1991\u2013${year})`
-    : `Major German Parties Polling (1991\u2013${year})`;
+  const titleText = isMobile
+    ? `Major Parties<br>(${startYear}\u2013${year})`
+    : `Major German Parties Polling (${startYear}\u2013${year})`;
   const layout = baseLayout(titleText, isMobile);
 
   const maxVal = Math.max(...data.map((d) =>
@@ -223,10 +224,11 @@ export function renderBlocksChart(containerId, data) {
     });
   }
 
+  const startYear = dates[0].getFullYear();
   const year = new Date().getFullYear();
   const titleText = isMobile
-    ? `Political Blocks<br>(1991\u2013${year})`
-    : `Political Spectrum in Germany (1991\u2013${year}) \u2014 Blocks`;
+    ? `Political Blocks<br>(${startYear}\u2013${year})`
+    : `Political Spectrum in Germany (${startYear}\u2013${year}) \u2014 Blocks`;
   const layout = baseLayout(titleText, isMobile);
 
   const maxVal = Math.max(...data.map((d) =>
