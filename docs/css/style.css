@@ -62,7 +62,7 @@ header h1 {
   background-clip: text;
   -webkit-text-fill-color: transparent;
   margin-bottom: 0.5rem;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
 }
 
 header p, header a {

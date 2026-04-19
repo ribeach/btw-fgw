@@ -14,7 +14,7 @@ export async function loadDemographicsData() {
  * Sums the selected parties' percentages for the given gender and age bracket.
  * - Missing age bracket for a year -> null (line gap)
  * - Missing party within an existing row -> 0 (party didn't exist yet)
- * - Union = CDU + CSU; if both null -> null; if only CSU null (1953-57) -> CDU value
+ * - Union = CDU + CSU; missing CDU/CSU values contribute 0
  */
 export function computeSelectionValue(data, gender, ageBracket, parties, year) {
   const genderData = data.genders[gender];
@@ -27,27 +27,17 @@ export function computeSelectionValue(data, gender, ageBracket, parties, year) {
   if (!bracketData) return null;
 
   let sum = 0;
-  let anyValid = false;
 
   for (const party of parties) {
     if (party === "union") {
-      const cdu = bracketData.cdu;
-      const csu = bracketData.csu;
-      if (cdu !== null && cdu !== undefined) { sum += cdu; anyValid = true; }
-      if (csu !== null && csu !== undefined) { sum += csu; anyValid = true; }
-      // If both null, this party contributes nothing and anyValid stays false
-      // (unless other parties are also selected)
+      sum += bracketData.cdu ?? 0;
+      sum += bracketData.csu ?? 0;
     } else {
-      const val = bracketData[party];
-      if (val !== null && val !== undefined) {
-        sum += val;
-        anyValid = true;
-      }
-      // Missing party (null) -> treat as 0, don't block anyValid from other parties
+      sum += bracketData[party] ?? 0;
     }
   }
 
-  return anyValid ? Math.round(sum * 10) / 10 : null;
+  return Math.round(sum * 10) / 10;
 }
 
 /**

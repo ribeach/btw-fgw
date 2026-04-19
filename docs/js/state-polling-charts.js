@@ -22,6 +22,7 @@ function lerpColor(hex1, hex2, t) {
  * Negative (right leads) → red, zero → neutral slate, positive (left leads) → blue.
  */
 export function diffToColor(diff) {
+  if (!Number.isFinite(diff)) return COLOR_NEUTRAL;
   const clamped = Math.max(-COLOR_SCALE_MAX, Math.min(COLOR_SCALE_MAX, diff));
   if (clamped < 0) {
     const t = Math.pow(-clamped / COLOR_SCALE_MAX, COLOR_SCALE_POWER);
@@ -33,16 +34,40 @@ export function diffToColor(diff) {
 }
 
 function formatDiff(v) {
+  if (!Number.isFinite(v)) return "–";
   return (v >= 0 ? "+" : "") + v.toFixed(1) + "pp";
 }
 
 function formatDate(dateStr) {
   if (!dateStr) return "–";
-  try {
-    return new Date(dateStr).toLocaleDateString("de-DE", { day: "numeric", month: "short", year: "numeric" });
-  } catch {
+  const date = new Date(dateStr);
+  if (Number.isNaN(date.getTime())) {
     return dateStr;
   }
+  return date.toLocaleDateString("de-DE", { day: "numeric", month: "short", year: "numeric" });
+}
+
+function formatYear(dateStr) {
+  return /^\d{4}/.test(dateStr ?? "") ? dateStr.slice(0, 4) : "–";
+}
+
+function formatPercent(value) {
+  return Number.isFinite(value) ? `${value.toFixed(1)}%` : "–";
+}
+
+function diffClass(value) {
+  if (!Number.isFinite(value)) return "";
+  return value >= 0 ? "pos" : "neg";
+}
+
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, (ch) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    "\"": "&quot;",
+    "'": "&#39;",
+  }[ch]));
 }
 
 /**
@@ -56,6 +81,9 @@ function formatDate(dateStr) {
 export function renderMap(container, svgText, states, valueKey, tooltip) {
   container.innerHTML = svgText;
   const svg = container.querySelector("svg");
+  if (!svg) {
+    throw new Error("State map SVG did not contain an <svg> element");
+  }
   svg.style.width = "100%";
   svg.style.height = "auto";
 
@@ -90,24 +118,25 @@ function buildTooltip(state, valueKey) {
   const isChange = valueKey === "change";
   const value = state[valueKey];
   const valueStr = formatDiff(value);
-  const direction = value >= 0 ? "Links führt" : "Rechts führt";
-  const changeDir = value >= 0 ? "nach links" : "nach rechts";
+  const direction = Number.isFinite(value) ? (value >= 0 ? "Links führt" : "Rechts führt") : "Keine Daten";
+  const changeDir = Number.isFinite(value) ? (value >= 0 ? "nach links" : "nach rechts") : "Keine Daten";
+  const stateName = escapeHtml(state.name);
 
   if (isChange) {
     return `
-      <div class="tooltip-title">${state.name}</div>
-      <div class="tooltip-row"><span>Veränderung:</span><span class="${value >= 0 ? "pos" : "neg"}">${valueStr}</span></div>
+      <div class="tooltip-title">${stateName}</div>
+      <div class="tooltip-row"><span>Veränderung:</span><span class="${diffClass(value)}">${valueStr}</span></div>
       <div class="tooltip-row"><span>Richtung:</span><span>${changeDir}</span></div>
       <div class="tooltip-row"><span>Aktuell:</span><span>${formatDiff(state.diff)}</span></div>
-      <div class="tooltip-row"><span>Landtagswahl ${state.election.date.slice(0, 4)}:</span><span>${formatDiff(state.election.diff)}</span></div>
+      <div class="tooltip-row"><span>Landtagswahl ${formatYear(state.election?.date)}:</span><span>${formatDiff(state.election?.diff)}</span></div>
     `;
   } else {
     return `
-      <div class="tooltip-title">${state.name}</div>
-      <div class="tooltip-row"><span>Links–Rechts:</span><span class="${value >= 0 ? "pos" : "neg"}">${valueStr}</span></div>
+      <div class="tooltip-title">${stateName}</div>
+      <div class="tooltip-row"><span>Links–Rechts:</span><span class="${diffClass(value)}">${valueStr}</span></div>
       <div class="tooltip-row"><span>${direction}</span></div>
-      <div class="tooltip-row"><span>Links (SPD+Grüne+Linke):</span><span>${state.left.toFixed(1)}%</span></div>
-      <div class="tooltip-row"><span>Rechts (CDU/CSU+AfD):</span><span>${state.right.toFixed(1)}%</span></div>
+      <div class="tooltip-row"><span>Links (SPD+Grüne+Linke):</span><span>${formatPercent(state.left)}</span></div>
+      <div class="tooltip-row"><span>Rechts (CDU/CSU+AfD):</span><span>${formatPercent(state.right)}</span></div>
       <div class="tooltip-row"><span>Umfrage vom:</span><span>${formatDate(state.poll_date)}</span></div>
     `;
   }
@@ -136,15 +165,15 @@ export function renderSegment(el, summary) {
     {
       label: "Spannweite",
       value: null,
-      sub: `${summary.max_state_name}: ${formatDiff(summary.max_diff)} — ${summary.min_state_name}: ${formatDiff(summary.min_diff)}`,
+      sub: `${escapeHtml(summary.max_state_name)}: ${formatDiff(summary.max_diff)} — ${escapeHtml(summary.min_state_name)}: ${formatDiff(summary.min_diff)}`,
       valueHtml: `<span class="pos">${formatDiff(summary.max_diff)}</span> bis <span class="neg">${formatDiff(summary.min_diff)}</span>`,
     },
   ];
 
   el.innerHTML = cards.map((c) => `
     <div class="segment-card">
-      <div class="segment-label">${c.label}</div>
-      <div class="segment-value ${c.value !== null ? (c.value >= 0 ? "pos" : "neg") : ""}">
+      <div class="segment-label">${escapeHtml(c.label)}</div>
+      <div class="segment-value ${c.value !== null ? diffClass(c.value) : ""}">
         ${c.valueHtml ?? formatDiff(c.value)}
       </div>
       <div class="segment-sub">${c.sub}</div>
@@ -160,12 +189,12 @@ let sortAsc = false;
  */
 export function renderTable(el, states) {
   const columns = [
-    { key: "name", label: "Bundesland", fmt: (s) => s.name },
-    { key: "left", label: "Links %", fmt: (s) => s.left.toFixed(1) + "%" },
-    { key: "right", label: "Rechts %", fmt: (s) => s.right.toFixed(1) + "%" },
-    { key: "diff", label: "Differenz", fmt: (s) => `<span class="${s.diff >= 0 ? "pos" : "neg"}">${formatDiff(s.diff)}</span>` },
-    { key: "election_diff", label: `Landtagswahl`, fmt: (s) => `<span class="${s.election.diff >= 0 ? "pos" : "neg"}">${formatDiff(s.election.diff)}</span>` },
-    { key: "change", label: "Veränderung", fmt: (s) => `<span class="${s.change >= 0 ? "pos" : "neg"}">${formatDiff(s.change)}</span>` },
+    { key: "name", label: "Bundesland", fmt: (s) => escapeHtml(s.name) },
+    { key: "left", label: "Links %", fmt: (s) => formatPercent(s.left) },
+    { key: "right", label: "Rechts %", fmt: (s) => formatPercent(s.right) },
+    { key: "diff", label: "Differenz", fmt: (s) => `<span class="${diffClass(s.diff)}">${formatDiff(s.diff)}</span>` },
+    { key: "election_diff", label: `Landtagswahl`, fmt: (s) => `<span class="${diffClass(s.election?.diff)}">${formatDiff(s.election?.diff)}</span>` },
+    { key: "change", label: "Veränderung", fmt: (s) => `<span class="${diffClass(s.change)}">${formatDiff(s.change)}</span>` },
     { key: "poll_date", label: "Umfrage vom", fmt: (s) => formatDate(s.poll_date) },
   ];
 
@@ -174,17 +203,24 @@ export function renderTable(el, states) {
     if (key === "left") return s.left;
     if (key === "right") return s.right;
     if (key === "diff") return s.diff;
-    if (key === "election_diff") return s.election.diff;
+    if (key === "election_diff") return s.election?.diff;
     if (key === "change") return s.change;
     if (key === "poll_date") return s.poll_date;
     return 0;
+  }
+
+  function compareSortValues(av, bv) {
+    if (typeof av === "string" || typeof bv === "string") {
+      return String(av ?? "").localeCompare(String(bv ?? ""), "de");
+    }
+    return (av ?? 0) - (bv ?? 0);
   }
 
   function doRender() {
     const sorted = [...states].sort((a, b) => {
       const av = getSortValue(a, sortKey);
       const bv = getSortValue(b, sortKey);
-      const cmp = typeof av === "string" ? av.localeCompare(bv, "de") : av - bv;
+      const cmp = compareSortValues(av, bv);
       return sortAsc ? cmp : -cmp;
     });
 
