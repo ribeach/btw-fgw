@@ -76,7 +76,6 @@ function buildEndLabels(labels, lastDate) {
  * Common layout settings shared between both charts.
  */
 function baseLayout(title, isMobile) {
-  const year = new Date().getFullYear();
   return {
     title: {
       text: title,
@@ -171,7 +170,7 @@ export function renderPartiesChart(containerId, data) {
   }
 
   const startYear = dates[0].getFullYear();
-  const year = new Date().getFullYear();
+  const year = dates[dates.length - 1].getFullYear();
   const titleText = isMobile
     ? `Major Parties<br>(${startYear}\u2013${year})`
     : `Major German Parties Polling (${startYear}\u2013${year})`;
@@ -225,7 +224,7 @@ export function renderBlocksChart(containerId, data) {
   }
 
   const startYear = dates[0].getFullYear();
-  const year = new Date().getFullYear();
+  const year = dates[dates.length - 1].getFullYear();
   const titleText = isMobile
     ? `Political Blocks<br>(${startYear}\u2013${year})`
     : `Political Spectrum in Germany (${startYear}\u2013${year}) \u2014 Blocks`;

@@ -33,7 +33,7 @@ export const AGE_BRACKETS = [
 ];
 
 export const LINE_COLORS = ["#ff6b6b", "#4ecdc4", "#ffe66d", "#a29bfe", "#fd79a8"];
-export const MAX_SELECTIONS = 6;
+export const MAX_SELECTIONS = LINE_COLORS.length;
 
 export const DEFAULT_SELECTIONS = [
   { gender: "maenner",    ageBracket: "insgesamt", parties: ["spd", "gruene", "linke"] },

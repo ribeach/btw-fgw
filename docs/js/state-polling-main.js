@@ -1,6 +1,12 @@
 import { loadStatePollingData } from "./state-polling-data.js";
 import { renderMap, renderSegment, renderTable } from "./state-polling-charts.js";
 
+async function loadText(path, label) {
+  const resp = await fetch(path);
+  if (!resp.ok) throw new Error(`Failed to load ${label}: ${resp.status}`);
+  return resp.text();
+}
+
 async function init() {
   const statusEl = document.getElementById("status");
   const errorEl = document.getElementById("error");
@@ -10,7 +16,7 @@ async function init() {
 
     const [data, svgText] = await Promise.all([
       loadStatePollingData(),
-      fetch("data/germany-states.svg").then((r) => r.text()),
+      loadText("data/germany-states.svg", "state map"),
     ]);
 
     const tooltip = document.getElementById("map-tooltip");
