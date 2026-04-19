@@ -13,7 +13,7 @@ import pandas as pd
 
 EXCEL_URL = (
     "https://www.forschungsgruppe.de/Umfragen/Politbarometer/"
-    "Langzeitentwicklung_-_Themen_im_Ueberblick/Politik_I/1_Projektion.xlsx"
+    "Langzeitentwicklung_-_Themen_im_Ueberblick/Politik_I/1_Projektion_1.xlsx"
 )
 
 
