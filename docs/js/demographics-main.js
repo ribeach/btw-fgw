@@ -13,6 +13,64 @@ let demoData = null;
 let selections = [];
 let nextId = 0;
 
+// --- URL state helpers ---
+
+function serializeSelections(sels) {
+  const validKeys = new Set(Object.keys(DEMO_PARTIES));
+  const params = new URLSearchParams();
+  for (const sel of sels) {
+    const parties = sel.parties.filter((p) => validKeys.has(p));
+    if (!parties.length) continue;
+    params.append("s", `${sel.gender}.${sel.ageBracket}.${parties.join(",")}`);
+  }
+  if (!params.has("s")) return null;
+  // Check if this matches DEFAULT_SELECTIONS exactly so the default URL stays clean
+  const defaults = DEFAULT_SELECTIONS.filter((d) => d.parties.length > 0);
+  const entries = [...params.getAll("s")];
+  if (entries.length === defaults.length) {
+    const matchesDefault = defaults.every((d, i) => {
+      const expected = `${d.gender}.${d.ageBracket}.${d.parties.join(",")}`;
+      return entries[i] === expected;
+    });
+    if (matchesDefault) return null;
+  }
+  return params;
+}
+
+function parseSelectionsFromURL() {
+  const raw = new URLSearchParams(window.location.search).getAll("s");
+  if (!raw.length) return null;
+  const validGenders = new Set(Object.keys(GENDERS));
+  const validAges = new Set(AGE_BRACKETS.map((b) => b.key));
+  const validParties = new Set(Object.keys(DEMO_PARTIES));
+  const result = [];
+  for (const entry of raw) {
+    if (result.length >= MAX_SELECTIONS) break;
+    const dotIdx1 = entry.indexOf(".");
+    const dotIdx2 = entry.indexOf(".", dotIdx1 + 1);
+    if (dotIdx1 < 0 || dotIdx2 < 0) continue;
+    const gender = entry.slice(0, dotIdx1);
+    const ageBracket = entry.slice(dotIdx1 + 1, dotIdx2);
+    const partiesRaw = entry.slice(dotIdx2 + 1).split(",");
+    if (!validGenders.has(gender) || !validAges.has(ageBracket)) continue;
+    const parties = [...new Set(partiesRaw.filter((p) => validParties.has(p)))];
+    if (!parties.length) continue;
+    result.push({ gender, ageBracket, parties });
+  }
+  return result.length ? result : null;
+}
+
+function updateURL() {
+  try {
+    const params = serializeSelections(selections);
+    if (params === null) {
+      history.replaceState(null, "", window.location.pathname);
+    } else {
+      history.replaceState(null, "", "?" + params.toString());
+    }
+  } catch (_) {}
+}
+
 // Track which colors are in use so removals don't reshuffle
 function getNextColor() {
   const usedColors = new Set(selections.map((s) => s.color));
@@ -138,6 +196,7 @@ function renderSelections() {
 
 let renderTimer = null;
 function scheduleRender() {
+  updateURL();
   clearTimeout(renderTimer);
   renderTimer = setTimeout(() => {
     if (demoData) {
@@ -158,11 +217,13 @@ async function init() {
 
     demoData = await loadDemographicsData();
 
-    // Initialize default selections
-    for (const def of DEFAULT_SELECTIONS) {
+    // Initialize selections from URL or defaults
+    const fromURL = parseSelectionsFromURL();
+    for (const def of fromURL ?? DEFAULT_SELECTIONS) {
       selections.push(createSelection(def));
     }
 
+    updateURL();
     renderSelections();
     renderDemographicsChart("demographics-chart", demoData, selections);
 
