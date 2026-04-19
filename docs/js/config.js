@@ -24,6 +24,9 @@ export const BLOCKS = {
 
 // German federal election dates
 export const ELECTION_DATES = [
+  "1980-10-05",
+  "1983-03-06",
+  "1987-01-25",
   "1990-12-02",
   "1994-10-16",
   "1998-09-27",
