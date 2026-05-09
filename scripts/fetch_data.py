@@ -5,15 +5,21 @@ from __future__ import annotations
 import datetime
 import io
 import json
+import re
 from enum import StrEnum
 from pathlib import Path
+from urllib.parse import urljoin
 
 import httpx
 import pandas as pd
 
-EXCEL_URL = (
+# Page that lists the Sonntagsfrage / Projektion Excel download. The exact
+# filename on disk has been renamed multiple times upstream
+# (e.g. 1_Projektion.xlsx <-> 1_Projektion_1.xlsx), so we discover the link
+# from this index page rather than hardcoding it.
+INDEX_URL = (
     "https://www.forschungsgruppe.de/Umfragen/Politbarometer/"
-    "Langzeitentwicklung_-_Themen_im_Ueberblick/Politik_I/1_Projektion_1.xlsx"
+    "Langzeitentwicklung_-_Themen_im_Ueberblick/Politik_I/"
 )
 
 
@@ -48,15 +54,43 @@ ETAG_PATH = Path(__file__).resolve().parent.parent / "docs" / "data" / ".etag"
 PRE_POLLING_PATH = Path(__file__).resolve().parent.parent / "docs" / "data" / "pre-polling.json"
 
 
+def discover_excel_url(client: httpx.Client) -> str:
+    """Find the Projektion Excel URL by scraping the index page."""
+    print(f"Discovering Excel link from {INDEX_URL}...")
+    resp = client.get(INDEX_URL)
+    resp.raise_for_status()
+
+    hrefs = re.findall(r'href="([^"]+\.xlsx)"', resp.text, flags=re.IGNORECASE)
+    projektion = [h for h in hrefs if "projektion" in h.lower()]
+    if not projektion:
+        raise RuntimeError(
+            f"No Projektion .xlsx link found on {INDEX_URL}. "
+            f"All .xlsx hrefs: {hrefs}"
+        )
+
+    def score(href: str) -> tuple[int, int]:
+        basename = href.rsplit("/", 1)[-1]
+        starts_with_one = basename.startswith("1_")
+        # Prefer basenames that start with "1_" (matches the historical
+        # 1_Projektion*.xlsx pattern), then prefer the shortest basename.
+        return (0 if starts_with_one else 1, len(basename))
+
+    best = min(projektion, key=score)
+    url = urljoin(INDEX_URL, best)
+    print(f"Resolved Excel URL: {url}")
+    return url
+
+
 def fetch_excel() -> bytes | None:
     """Fetch the Excel file, skipping download if unchanged (HTTP 304)."""
     headers = {}
     if ETAG_PATH.exists():
         headers["If-None-Match"] = ETAG_PATH.read_text().strip()
 
-    print(f"Fetching {EXCEL_URL}...")
     with httpx.Client(follow_redirects=True, timeout=30.0) as client:
-        resp = client.get(EXCEL_URL, headers=headers)
+        excel_url = discover_excel_url(client)
+        print(f"Fetching {excel_url}...")
+        resp = client.get(excel_url, headers=headers)
 
     if resp.status_code == 304:
         print("File unchanged (304 Not Modified), skipping.")
@@ -120,6 +154,61 @@ def write_output(records: list[dict[str, object]]) -> None:
     print(f"Wrote {len(records)} records to {OUTPUT_PATH}")
 
 
+def locate_and_label_data(content: bytes) -> pd.DataFrame:
+    """Find the header row in the workbook and return a labeled data frame.
+
+    Tolerates upstream sheet renames, leading-row shifts, and reordered party
+    columns. The header row is identified by the first row (across all sheets,
+    scanning the first 30 rows of each) that contains both "CDU/CSU" and "SPD"
+    cells. Party columns are matched against EXCEL_COLUMNS by case-insensitive,
+    whitespace-trimmed header text. The leftmost remaining non-empty column is
+    treated as the date column.
+    """
+    sheets = pd.read_excel(io.BytesIO(content), sheet_name=None, header=None)
+
+    def normalize(value: object) -> str:
+        return str(value).strip().casefold() if pd.notna(value) else ""
+
+    expected = {key.casefold(): mapped for key, mapped in EXCEL_COLUMNS.items()}
+
+    for sheet_name, sheet in sheets.items():
+        scan_limit = min(30, len(sheet))
+        for header_idx in range(scan_limit):
+            header = [normalize(v) for v in sheet.iloc[header_idx].tolist()]
+            if "cdu/csu" in header and "spd" in header:
+                column_map: dict[int, str] = {}
+                for col_idx, label in enumerate(header):
+                    if label in expected:
+                        column_map[col_idx] = expected[label]
+                if not column_map:
+                    continue
+
+                data = sheet.iloc[header_idx + 1 :].reset_index(drop=True)
+                party_cols = sorted(column_map.keys())
+                date_col = next(
+                    (
+                        idx
+                        for idx in range(len(header))
+                        if idx not in column_map and data.iloc[:, idx].notna().any()
+                    ),
+                    None,
+                )
+                if date_col is None:
+                    continue
+
+                selected = data.iloc[:, [date_col, *party_cols]].copy()
+                selected.columns = ["date"] + [column_map[c] for c in party_cols]
+                return selected
+
+    sheet_summaries = {
+        name: sheet.head(3).to_dict(orient="records") for name, sheet in sheets.items()
+    }
+    raise RuntimeError(
+        "Could not locate header row with 'CDU/CSU' and 'SPD' in any sheet. "
+        f"First rows by sheet: {sheet_summaries}"
+    )
+
+
 def fetch_and_convert() -> None:
     content = fetch_excel()
     if content is None:
@@ -132,19 +221,8 @@ def fetch_and_convert() -> None:
             write_output(records)
         return
 
-    df = pd.read_excel(
-        io.BytesIO(content),
-        sheet_name="Tabelle1",
-        header=None,
-        skiprows=9,
-    )
-
-    # Column 0 is empty, column 1 is date, columns 2-10 are parties
-    df = df.iloc[:, 1:11]
-    header_row = ["date"] + list(EXCEL_COLUMNS.keys())
-    df.columns = header_row
-    df = df.rename(columns=EXCEL_COLUMNS)
-    df["date"] = pd.to_datetime(df["date"])
+    df = locate_and_label_data(content)
+    df["date"] = pd.to_datetime(df["date"], errors="coerce")
     df = df.dropna(subset=["date"])
     df = df.set_index("date").sort_index()
 
