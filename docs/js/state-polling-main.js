@@ -1,5 +1,6 @@
 import { loadStatePollingData } from "./state-polling-data.js";
 import { renderMap, renderSegment, renderTable } from "./state-polling-charts.js";
+import { getStatusEls, showLoading, showError } from "./shared.js";
 
 async function loadText(path, label) {
   const resp = await fetch(path);
@@ -8,11 +9,10 @@ async function loadText(path, label) {
 }
 
 async function init() {
-  const statusEl = document.getElementById("status");
-  const errorEl = document.getElementById("error");
+  const { statusEl, errorEl } = getStatusEls();
 
   try {
-    statusEl.innerHTML = '<div class="spinner"></div> <span>Loading data…</span>';
+    showLoading(statusEl, "Loading data…");
 
     const [data, svgText] = await Promise.all([
       loadStatePollingData(),
@@ -35,9 +35,7 @@ async function init() {
     statusEl.classList.add("success");
   } catch (err) {
     console.error(err);
-    statusEl.textContent = "";
-    errorEl.textContent = `Failed to load state polling data: ${err.message}`;
-    errorEl.style.display = "block";
+    showError(statusEl, errorEl, `Failed to load state polling data: ${err.message}`);
   }
 }
 

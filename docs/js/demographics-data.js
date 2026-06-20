@@ -2,10 +2,10 @@
  * Load demographics JSON and compute selection values.
  */
 
+import { fetchJson } from "./shared.js";
+
 export async function loadDemographicsData() {
-  const resp = await fetch("data/demographics.json");
-  if (!resp.ok) throw new Error(`Failed to load data: ${resp.status}`);
-  return resp.json();
+  return fetchJson("data/demographics.json");
 }
 
 /**
