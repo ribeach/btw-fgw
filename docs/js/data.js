@@ -15,6 +15,9 @@ export async function loadPollingData() {
     ...row,
     date: new Date(row.date),
   }));
+  if (!Array.isArray(data) || data.length === 0) {
+    throw new Error("Polling dataset is empty");
+  }
   return { data, updated: json.updated };
 }
 

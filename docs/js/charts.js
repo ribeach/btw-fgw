@@ -158,19 +158,19 @@ export function renderPartiesChart(containerId, data) {
       x: dates,
       y: smoothed,
       mode: "lines",
-      line: { color: info.color, width: isMobile ? 2.0 : 2.5 },
+      line: { color: info.lineColor || info.color, width: isMobile ? 2.0 : 2.5 },
       name: info.label,
       hovertemplate: `${info.label}: %{y:.1f}%<extra></extra>`,
     });
     endLabels.push({
       yValue: smoothed[smoothed.length - 1],
       text: info.label,
-      color: info.color,
+      color: info.lineColor || info.color,
     });
   }
 
-  const startYear = dates[0].getFullYear();
-  const year = dates[dates.length - 1].getFullYear();
+  const startYear = dates[0].getUTCFullYear();
+  const year = dates[dates.length - 1].getUTCFullYear();
   const titleText = isMobile
     ? `Major Parties<br>(${startYear}\u2013${year})`
     : `Major German Parties Polling (${startYear}\u2013${year})`;
@@ -223,8 +223,8 @@ export function renderBlocksChart(containerId, data) {
     });
   }
 
-  const startYear = dates[0].getFullYear();
-  const year = dates[dates.length - 1].getFullYear();
+  const startYear = dates[0].getUTCFullYear();
+  const year = dates[dates.length - 1].getUTCFullYear();
   const titleText = isMobile
     ? `Political Blocks<br>(${startYear}\u2013${year})`
     : `Political Spectrum in Germany (${startYear}\u2013${year}) \u2014 Blocks`;

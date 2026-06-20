@@ -42,7 +42,7 @@ function formatDate(dateStr) {
   if (!dateStr) return "–";
   const date = new Date(dateStr);
   if (Number.isNaN(date.getTime())) {
-    return dateStr;
+    return escapeHtml(dateStr);
   }
   return date.toLocaleDateString("de-DE", { day: "numeric", month: "short", year: "numeric" });
 }
@@ -108,8 +108,8 @@ export function renderMap(container, svgText, states, valueKey, tooltip) {
       const x = e.clientX + 14;
       const y = e.clientY + 14;
       // Keep tooltip within viewport
-      tooltip.style.left = `${Math.min(x, window.innerWidth - 210)}px`;
-      tooltip.style.top = `${Math.min(y, window.innerHeight - 160)}px`;
+      tooltip.style.left = `${Math.max(8, Math.min(x, window.innerWidth - 210))}px`;
+      tooltip.style.top = `${Math.max(8, Math.min(y, window.innerHeight - 160))}px`;
     });
   }
 }

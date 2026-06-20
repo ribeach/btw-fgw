@@ -1,6 +1,6 @@
-// Party configuration — mirrors fetch_and_plot.py PARTY_CONFIG
+// Party configuration — labels, colors, and political-block membership (frontend source of truth)
 export const PARTY_CONFIG = {
-  cdu:      { label: "CDU/CSU",   color: "#000000", block: "right" },
+  cdu:      { label: "CDU/CSU",   color: "#000000", lineColor: "#cbd5e1", block: "right" },
   spd:      { label: "SPD",       color: "#E3000F", block: "left" },
   gruene:   { label: "Grüne",     color: "#1AA037", block: "left" },
   fdp:      { label: "FDP",       color: "#FFCC00", block: "other" },

@@ -1,4 +1,4 @@
-import { loadDemographicsData } from "./demographics-data.js";
+import { loadDemographicsData, getElectionYears } from "./demographics-data.js";
 import { renderDemographicsChart } from "./demographics-charts.js";
 import {
   DEMO_PARTIES,
@@ -13,13 +13,16 @@ let demoData = null;
 let selections = [];
 let nextId = 0;
 
+const PARTY_ORDER = Object.keys(DEMO_PARTIES);
+const sortParties = (arr) => [...arr].sort((a, b) => PARTY_ORDER.indexOf(a) - PARTY_ORDER.indexOf(b));
+
 // --- URL state helpers ---
 
 function serializeSelections(sels) {
   const validKeys = new Set(Object.keys(DEMO_PARTIES));
   const params = new URLSearchParams();
   for (const sel of sels) {
-    const parties = sel.parties.filter((p) => validKeys.has(p));
+    const parties = sortParties(sel.parties.filter((p) => validKeys.has(p)));
     if (!parties.length) continue;
     params.append("s", `${sel.gender}.${sel.ageBracket}.${parties.join(",")}`);
   }
@@ -29,7 +32,7 @@ function serializeSelections(sels) {
   const entries = [...params.getAll("s")];
   if (entries.length === defaults.length) {
     const matchesDefault = defaults.every((d, i) => {
-      const expected = `${d.gender}.${d.ageBracket}.${d.parties.join(",")}`;
+      const expected = `${d.gender}.${d.ageBracket}.${sortParties(d.parties).join(",")}`;
       return entries[i] === expected;
     });
     if (matchesDefault) return null;
@@ -216,6 +219,7 @@ async function init() {
     statusEl.innerHTML = '<div class="spinner"></div> <span>Loading data\u2026</span>';
 
     demoData = await loadDemographicsData();
+    if (!getElectionYears(demoData).length) throw new Error("Demographics dataset is empty");
 
     // Initialize selections from URL or defaults
     const fromURL = parseSelectionsFromURL();
