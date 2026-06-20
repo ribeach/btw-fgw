@@ -5,6 +5,7 @@ from __future__ import annotations
 import datetime
 import json
 import math
+import sys
 from pathlib import Path
 
 import httpx
@@ -41,9 +42,38 @@ STATE_PARLIAMENT_IDS = {
 LEFT_PARTY_IDS = {"2", "4", "5"}      # SPD, Grüne, Linke
 RIGHT_PARTY_IDS = {"1", "7", "101", "102"}  # CDU/CSU, AfD, CDU, CSU
 
+# dawum party IDs we knowingly leave OUT of the left/right split (everything that
+# is neither LEFT nor RIGHT). Sourced from the https://api.dawum.de Parties
+# catalog: 0 Sonstige, 3 FDP, 6 Piraten, 8 Freie Wähler, 9 NPD, 10 SSW,
+# 11 Bayernpartei, 12 ÖDP, 13 Die PARTEI, 14 BVB/FW, 15 Tierschutzpartei,
+# 16 BD, 17 Familie, 18 Volt, 21 bunt.saar, 22 BfTh, 23 BSW, 24 Plus Brandenburg,
+# 25 WerteUnion. A Results party ID outside LEFT/RIGHT/NEUTRAL is a newly-
+# introduced party we have not triaged -> warn instead of silently dropping it.
+KNOWN_NEUTRAL_PARTY_IDS = {
+    "0", "3", "6", "8", "9", "10", "11", "12", "13", "14",
+    "15", "16", "17", "18", "21", "22", "23", "24", "25",
+}
+
 # West and East state IDs for summary averages
 WEST_STATES = {"DE-BW", "DE-BY", "DE-HB", "DE-HH", "DE-HE", "DE-NI", "DE-NW", "DE-RP", "DE-SL", "DE-SH"}
 EAST_STATES = {"DE-BB", "DE-BE", "DE-MV", "DE-SN", "DE-ST", "DE-TH"}
+
+# Party IDs already reported via a WARN, so each unknown ID is logged once.
+_warned_party_ids: set[str] = set()
+
+
+def _guard_write(count: int, prior_count: int | None, output_path: Path, label: str) -> None:
+    """Refuse to overwrite good data with an empty / suspiciously shrunken result."""
+    if count == 0:
+        print(f"ERROR: refusing to write {output_path}: {label} count is 0", file=sys.stderr)
+        sys.exit(1)
+    if prior_count is not None and count < prior_count * 0.9:
+        print(
+            f"ERROR: refusing to write {output_path}: {label} shrank "
+            f"(was {prior_count}, now {count}); aborting",
+            file=sys.stderr,
+        )
+        sys.exit(1)
 
 
 def check_last_update(client: httpx.Client) -> str | None:
@@ -78,7 +108,10 @@ def compute_weighted_diff(surveys: list[dict]) -> tuple[float, float, float, str
     latest_date = ""
 
     for s in surveys:
-        date_str = s["Date"]
+        date_str = s.get("Date", "")
+        if not date_str:
+            print(f"WARN: survey {s.get('Survey_ID', '?')} missing Date; skipping", file=sys.stderr)
+            continue
         if date_str > latest_date:
             latest_date = date_str
 
@@ -87,14 +120,40 @@ def compute_weighted_diff(surveys: list[dict]) -> tuple[float, float, float, str
         except ValueError:
             age_days = 30
 
-        try:
-            n = float(s.get("Surveyed_Persons", 1000))
-        except (TypeError, ValueError):
+        if "Surveyed_Persons" not in s:
+            print(
+                f"WARN: survey {s.get('Survey_ID', '?')} missing Surveyed_Persons; using 1000",
+                file=sys.stderr,
+            )
             n = 1000.0
+        else:
+            try:
+                n = float(s["Surveyed_Persons"])
+            except (TypeError, ValueError):
+                print(
+                    f"WARN: survey {s.get('Survey_ID', '?')} non-numeric Surveyed_Persons "
+                    f"{s['Surveyed_Persons']!r}; using 1000",
+                    file=sys.stderr,
+                )
+                n = 1000.0
 
         weight = math.sqrt(max(n, 1)) * (0.5 ** (age_days / 30))
 
         results = s.get("Results", {})
+        for pid in results:
+            if (
+                pid not in LEFT_PARTY_IDS
+                and pid not in RIGHT_PARTY_IDS
+                and pid not in KNOWN_NEUTRAL_PARTY_IDS
+                and pid not in _warned_party_ids
+            ):
+                print(
+                    f"WARN: unknown dawum party ID {pid} in survey results "
+                    f"(not in left/right/neutral whitelist)",
+                    file=sys.stderr,
+                )
+                _warned_party_ids.add(pid)
+
         left = sum(float(results.get(pid, 0)) for pid in LEFT_PARTY_IDS)
         right = sum(float(results.get(pid, 0)) for pid in RIGHT_PARTY_IDS)
 
@@ -117,9 +176,13 @@ def fetch_and_convert() -> None:
             return
 
         print(f"Fetching {NEWEST_SURVEYS_URL}...")
-        resp = client.get(NEWEST_SURVEYS_URL)
-        resp.raise_for_status()
-        api_data = resp.json()
+        try:
+            resp = client.get(NEWEST_SURVEYS_URL)
+            resp.raise_for_status()
+            api_data = resp.json()
+        except Exception as e:
+            print(f"ERROR: could not fetch/parse {NEWEST_SURVEYS_URL}: {e}", file=sys.stderr)
+            sys.exit(1)
 
     surveys_by_parliament: dict[str, list[dict]] = {}
     for survey in api_data.get("Surveys", {}).values():
@@ -135,24 +198,35 @@ def fetch_and_convert() -> None:
         election = election_data.get(state_id, {})
 
         election_date = election.get("date", "")
+        if not election_date:
+            print(
+                f"WARN: {state_id} has no election_date; recency filter disabled "
+                f"(all surveys kept)",
+                file=sys.stderr,
+            )
         # Filter out surveys that are older than or equal to the last election
         surveys = [s for s in surveys if s.get("Date", "") > election_date]
 
         if surveys:
             left, right, diff, poll_date = compute_weighted_diff(surveys)
+            is_fallback = False
         else:
             # Fallback: use election result
             left = round(election.get("left", 0.0), 1)
             right = round(election.get("right", 0.0), 1)
             diff = round(left - right, 1)
             poll_date = election_date
+            is_fallback = True
 
         election_diff = round(election.get("left", 0.0) - election.get("right", 0.0), 1)
         change = round(diff - election_diff, 1)
 
+        parliaments = api_data.get("Parliaments") or {}
+        name = election.get("name") or (parliaments.get(pid) or {}).get("Shortcut", state_id)
+
         states.append({
             "id": state_id,
-            "name": election.get("name", api_data["Parliaments"][pid]["Shortcut"]),
+            "name": name,
             "left": left,
             "right": right,
             "diff": diff,
@@ -164,6 +238,7 @@ def fetch_and_convert() -> None:
                 "diff": election_diff,
             },
             "change": change,
+            "is_fallback": is_fallback,
         })
 
     # Summary stats weighted by population
@@ -202,6 +277,19 @@ def fetch_and_convert() -> None:
         "summary": summary,
         "states": states,
     }
+
+    # Write-guard: must be exactly 16 states, non-empty, and not a sudden shrink.
+    if len(states) != len(STATE_PARLIAMENT_IDS):
+        print(
+            f"ERROR: refusing to write {OUTPUT_PATH}: expected "
+            f"{len(STATE_PARLIAMENT_IDS)} states, got {len(states)}",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    prior_count = None
+    if OUTPUT_PATH.exists():
+        prior_count = len(json.loads(OUTPUT_PATH.read_text()).get("states", [])) or None
+    _guard_write(len(states), prior_count, OUTPUT_PATH, "states")
 
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     OUTPUT_PATH.write_text(json.dumps(output, indent=2, ensure_ascii=False), encoding="utf-8")

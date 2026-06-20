@@ -1,5 +1,6 @@
 import json
 import os
+import sys
 from pathlib import Path
 
 import pandas as pd
@@ -15,6 +16,20 @@ if (ROOT / ".env").exists():
             if "=" in line:
                 key, value = line.strip().split("=", 1)
                 os.environ[key] = value.strip('"').strip("'")
+
+def _guard_write(count: int, prior_count: int | None, output_path: Path, label: str) -> None:
+    """Refuse to overwrite good data with an empty / suspiciously shrunken result."""
+    if count == 0:
+        print(f"ERROR: refusing to write {output_path}: {label} count is 0", file=sys.stderr)
+        sys.exit(1)
+    if prior_count is not None and count < prior_count * 0.9:
+        print(
+            f"ERROR: refusing to write {output_path}: {label} shrank "
+            f"(was {prior_count}, now {count}); aborting",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
 
 AGS_TO_DE = {
     "01": "DE-SH",
@@ -66,6 +81,11 @@ def fetch_population():
     missing_states = sorted(set(AGS_TO_DE.values()) - set(population_map))
     if missing_states:
         raise RuntimeError(f"Missing population values for: {', '.join(missing_states)}")
+
+    prior_count = None
+    if OUTPUT_PATH.exists():
+        prior_count = len(json.loads(OUTPUT_PATH.read_text(encoding="utf-8")).get("data", {})) or None
+    _guard_write(len(population_map), prior_count, OUTPUT_PATH, "population states")
 
     OUTPUT_PATH.write_text(
         json.dumps({
