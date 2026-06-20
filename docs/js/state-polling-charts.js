@@ -1,4 +1,4 @@
-import { COLOR_RIGHT, COLOR_NEUTRAL, COLOR_LEFT, COLOR_SCALE_MAX, COLOR_SCALE_POWER } from "./state-polling-config.js";
+import { COLOR_RIGHT, COLOR_NEUTRAL, COLOR_LEFT, COLOR_SCALE_MAX, COLOR_SCALE_POWER, WEST_STATES, EAST_STATES } from "./state-polling-config.js";
 
 /**
  * Interpolate between two hex colors.
@@ -176,6 +176,16 @@ function buildTooltip(state, valueKey) {
 }
 
 /**
+ * Join the two-letter suffixes of a set of "DE-XX" state ids into a subtitle,
+ * e.g. WEST_STATES → "BW, BY, HB, HH, HE, NI, NW, RP, SL, SH". Derives the
+ * West/East segment subtitles from the single source in state-polling-config.js
+ * so the map's classification and the subtitle can never drift apart.
+ */
+function stateAbbrevs(set) {
+  return [...set].map((id) => id.slice(3)).join(", ");
+}
+
+/**
  * Render the summary segment bar.
  */
 export function renderSegment(el, summary) {
@@ -188,12 +198,12 @@ export function renderSegment(el, summary) {
     {
       label: "Westdeutschland",
       value: summary.west_avg,
-      sub: "BW, BY, HB, HH, HE, NI, NW, RP, SL, SH",
+      sub: stateAbbrevs(WEST_STATES),
     },
     {
       label: "Ostdeutschland",
       value: summary.east_avg,
-      sub: "BB, BE, MV, SN, ST, TH",
+      sub: stateAbbrevs(EAST_STATES),
     },
     {
       label: "Spannweite",

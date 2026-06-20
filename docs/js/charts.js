@@ -1,5 +1,13 @@
-import { PARTY_CONFIG, MAJOR_PARTIES, BLOCKS, ELECTION_DATES } from "./config.js";
+import {
+  PARTY_CONFIG,
+  MAJOR_PARTIES,
+  BLOCKS,
+  ELECTION_DATES,
+  Y_AXIS_HEADROOM,
+  MOBILE_BREAKPOINT_PX,
+} from "./config.js";
 import { computeRollingAverage } from "./data.js";
+import { CHART_FONT, chartTheme, plotlyConfig } from "./shared.js";
 
 /**
  * Compute label positions with overlap avoidance.
@@ -76,38 +84,23 @@ function buildEndLabels(labels, lastDate) {
  * Common layout settings shared between both charts.
  */
 function baseLayout(title, isMobile) {
+  const theme = chartTheme(isMobile);
   return {
     title: {
       text: title,
-      font: { size: isMobile ? 14 : 20, family: "Inter, system-ui, -apple-system, sans-serif", color: "#f8fafc" },
+      font: { size: isMobile ? 14 : 20, family: CHART_FONT, color: "#f8fafc" },
       x: 0.02,
       xanchor: "left",
       y: isMobile ? 0.98 : 0.95,
       yanchor: "top"
     },
-    font: { family: "Inter, system-ui, -apple-system, sans-serif", color: "#f8fafc", size: isMobile ? 10 : 12 },
-    plot_bgcolor: "rgba(0,0,0,0)",
-    paper_bgcolor: "rgba(0,0,0,0)",
+    ...theme,
     margin: isMobile ? { l: 40, r: 20, t: 70, b: 140 } : { l: 60, r: 140, t: 60, b: 50 },
     xaxis: {
+      ...theme.xaxis,
       dtick: isMobile ? "M48" : "M24",
       tickformat: "%Y",
-      gridcolor: "rgba(255,255,255,0.06)",
-      showline: false,
-      zeroline: false,
       tickangle: isMobile ? -45 : 0,
-    },
-    yaxis: {
-      ticksuffix: "%",
-      gridcolor: "rgba(255,255,255,0.06)",
-      showline: false,
-      zeroline: false,
-      rangemode: "tozero",
-    },
-    hoverlabel: {
-      bgcolor: "rgba(15, 23, 42, 0.9)",
-      bordercolor: "rgba(255, 255, 255, 0.1)",
-      font: { color: "#f8fafc", size: isMobile ? 10 : 13 }
     },
     showlegend: isMobile,
     legend: isMobile ? {
@@ -118,7 +111,6 @@ function baseLayout(title, isMobile) {
       itemwidth: 30,
       font: { size: 10 }
     } : undefined,
-    hovermode: "x unified",
     annotations: [
       {
         text: "Source: Forschungsgruppe Wahlen",
@@ -134,16 +126,31 @@ function baseLayout(title, isMobile) {
   };
 }
 
-function getPlotlyConfig(isMobile) {
-  return {
-    responsive: true,
-    displayModeBar: !isMobile,
-    modeBarButtonsToRemove: ["lasso2d", "select2d"],
-  };
+/**
+ * Shared chart finalization: build the layout, set axis ranges + election
+ * markers + desktop end-labels, then render. Identical tail for both charts.
+ */
+function finalizeChart(containerId, traces, dates, endLabels, titleText, maxVal, isMobile) {
+  const layout = baseLayout(titleText, isMobile);
+  layout.yaxis.range = [0, maxVal + Y_AXIS_HEADROOM];
+  layout.xaxis.range = [dates[0], dates[dates.length - 1]];
+
+  const markers = buildElectionMarkers(maxVal + Y_AXIS_HEADROOM);
+  layout.shapes = markers.shapes;
+  layout.annotations = [
+    ...layout.annotations,
+    ...markers.annotations,
+  ];
+
+  if (!isMobile) {
+    layout.annotations.push(...buildEndLabels(endLabels, dates[dates.length - 1]));
+  }
+
+  Plotly.react(containerId, traces, layout, plotlyConfig(isMobile));
 }
 
 export function renderPartiesChart(containerId, data) {
-  const isMobile = window.innerWidth <= 768;
+  const isMobile = window.innerWidth <= MOBILE_BREAKPOINT_PX;
   const dates = data.map((d) => d.date);
   const traces = [];
   const endLabels = [];
@@ -174,30 +181,16 @@ export function renderPartiesChart(containerId, data) {
   const titleText = isMobile
     ? `Major Parties<br>(${startYear}\u2013${year})`
     : `Major German Parties Polling (${startYear}\u2013${year})`;
-  const layout = baseLayout(titleText, isMobile);
 
   const maxVal = Math.max(...data.map((d) =>
     Math.max(...MAJOR_PARTIES.map((p) => d[p] || 0))
   ));
-  layout.yaxis.range = [0, maxVal + 5];
-  layout.xaxis.range = [dates[0], dates[dates.length - 1]];
 
-  const markers = buildElectionMarkers(maxVal + 5);
-  layout.shapes = markers.shapes;
-  layout.annotations = [
-    ...layout.annotations,
-    ...markers.annotations,
-  ];
-
-  if (!isMobile) {
-    layout.annotations.push(...buildEndLabels(endLabels, dates[dates.length - 1]));
-  }
-
-  Plotly.react(containerId, traces, layout, getPlotlyConfig(isMobile));
+  finalizeChart(containerId, traces, dates, endLabels, titleText, maxVal, isMobile);
 }
 
 export function renderBlocksChart(containerId, data) {
-  const isMobile = window.innerWidth <= 768;
+  const isMobile = window.innerWidth <= MOBILE_BREAKPOINT_PX;
   const dates = data.map((d) => d.date);
   const traces = [];
   const endLabels = [];
@@ -228,24 +221,10 @@ export function renderBlocksChart(containerId, data) {
   const titleText = isMobile
     ? `Political Blocks<br>(${startYear}\u2013${year})`
     : `Political Spectrum in Germany (${startYear}\u2013${year}) \u2014 Blocks`;
-  const layout = baseLayout(titleText, isMobile);
 
   const maxVal = Math.max(...data.map((d) =>
     Math.max(...Object.keys(BLOCKS).map((b) => d[b] || 0))
   ));
-  layout.yaxis.range = [0, maxVal + 5];
-  layout.xaxis.range = [dates[0], dates[dates.length - 1]];
 
-  const markers = buildElectionMarkers(maxVal + 5);
-  layout.shapes = markers.shapes;
-  layout.annotations = [
-    ...layout.annotations,
-    ...markers.annotations,
-  ];
-
-  if (!isMobile) {
-    layout.annotations.push(...buildEndLabels(endLabels, dates[dates.length - 1]));
-  }
-
-  Plotly.react(containerId, traces, layout, getPlotlyConfig(isMobile));
+  finalizeChart(containerId, traces, dates, endLabels, titleText, maxVal, isMobile);
 }

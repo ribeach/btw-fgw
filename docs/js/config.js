@@ -41,3 +41,9 @@ export const ELECTION_DATES = [
 
 // EWMA halflife in days: a poll from 30 days ago gets half the weight of today's
 export const SMOOTHING_HALFLIFE_DAYS = 30;
+
+// Headroom in percentage points added above the max value for the chart y-axis
+export const Y_AXIS_HEADROOM = 5;
+
+// Mobile layout breakpoint in px (keep in sync with the CSS @media queries in style.css)
+export const MOBILE_BREAKPOINT_PX = 768;

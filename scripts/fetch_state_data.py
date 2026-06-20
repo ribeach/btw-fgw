@@ -54,7 +54,8 @@ KNOWN_NEUTRAL_PARTY_IDS = {
     "15", "16", "17", "18", "21", "22", "23", "24", "25",
 }
 
-# West and East state IDs for summary averages
+# West and East state IDs for summary averages.
+# Keep in sync with WEST_STATES/EAST_STATES in docs/js/state-polling-config.js.
 WEST_STATES = {"DE-BW", "DE-BY", "DE-HB", "DE-HH", "DE-HE", "DE-NI", "DE-NW", "DE-RP", "DE-SL", "DE-SH"}
 EAST_STATES = {"DE-BB", "DE-BE", "DE-MV", "DE-SN", "DE-ST", "DE-TH"}
 

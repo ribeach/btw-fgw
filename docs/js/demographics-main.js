@@ -8,6 +8,7 @@ import {
   MAX_SELECTIONS,
   DEFAULT_SELECTIONS,
 } from "./demographics-config.js";
+import { getStatusEls, showLoading, showError } from "./shared.js";
 
 let demoData = null;
 let selections = [];
@@ -216,12 +217,11 @@ function scheduleRender() {
 // --- Initialization ---
 
 async function init() {
-  const statusEl = document.getElementById("status");
-  const errorEl = document.getElementById("error");
+  const { statusEl, errorEl } = getStatusEls();
   const addBtn = document.getElementById("add-selection");
 
   try {
-    statusEl.innerHTML = '<div class="spinner"></div> <span>Loading data\u2026</span>';
+    showLoading(statusEl, "Loading data\u2026");
 
     demoData = await loadDemographicsData();
     if (!getElectionYears(demoData).length) throw new Error("Demographics dataset is empty");
@@ -260,9 +260,7 @@ async function init() {
     statusEl.classList.add("success");
   } catch (err) {
     console.error(err);
-    statusEl.textContent = "";
-    errorEl.textContent = `Failed to load demographics data: ${err.message}`;
-    errorEl.style.display = "block";
+    showError(statusEl, errorEl, `Failed to load demographics data: ${err.message}`);
   }
 }
 

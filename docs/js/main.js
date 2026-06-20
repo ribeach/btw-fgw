@@ -1,12 +1,12 @@
 import { loadPollingData, computeBlocks } from "./data.js";
 import { renderPartiesChart, renderBlocksChart } from "./charts.js";
+import { getStatusEls, showLoading, showError } from "./shared.js";
 
 async function init() {
-  const statusEl = document.getElementById("status");
-  const errorEl = document.getElementById("error");
+  const { statusEl, errorEl } = getStatusEls();
 
   try {
-    statusEl.innerHTML = '<div class="spinner"></div> <span>Loading data\u2026</span>';
+    showLoading(statusEl, "Loading data\u2026");
     const { data, updated } = await loadPollingData();
     const enrichedData = computeBlocks(data);
 
@@ -38,9 +38,7 @@ async function init() {
     statusEl.classList.add("success");
   } catch (err) {
     console.error(err);
-    statusEl.textContent = "";
-    errorEl.textContent = `Failed to load polling data: ${err.message}`;
-    errorEl.style.display = "block";
+    showError(statusEl, errorEl, `Failed to load polling data: ${err.message}`);
   }
 }
 

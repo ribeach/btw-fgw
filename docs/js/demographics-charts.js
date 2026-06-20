@@ -1,5 +1,7 @@
 import { DEMO_PARTIES, GENDERS, AGE_BRACKETS } from "./demographics-config.js";
 import { computeSelectionValue, getElectionYears } from "./demographics-data.js";
+import { Y_AXIS_HEADROOM, MOBILE_BREAKPOINT_PX } from "./config.js";
+import { CHART_FONT, chartTheme, plotlyConfig } from "./shared.js";
 
 /**
  * Generate a human-readable label for a selection.
@@ -27,6 +29,7 @@ function selectionLabel(sel, short = false) {
  * Plotly base layout for the demographics chart.
  */
 function baseLayout(isMobile) {
+  const theme = chartTheme(isMobile);
   return {
     title: {
       text: isMobile
@@ -34,7 +37,7 @@ function baseLayout(isMobile) {
         : "Voting Patterns by Gender & Age (1953\u20132025)",
       font: {
         size: isMobile ? 14 : 20,
-        family: "Inter, system-ui, -apple-system, sans-serif",
+        family: CHART_FONT,
         color: "#f8fafc",
       },
       x: 0.02,
@@ -42,35 +45,15 @@ function baseLayout(isMobile) {
       y: isMobile ? 0.98 : 0.95,
       yanchor: "top",
     },
-    font: {
-      family: "Inter, system-ui, -apple-system, sans-serif",
-      color: "#f8fafc",
-      size: isMobile ? 10 : 12,
-    },
-    plot_bgcolor: "rgba(0,0,0,0)",
-    paper_bgcolor: "rgba(0,0,0,0)",
+    ...theme,
     margin: isMobile
       ? { l: 40, r: 20, t: 70, b: 60 }
       : { l: 60, r: 30, t: 60, b: 50 },
     xaxis: {
+      ...theme.xaxis,
       title: "",
-      gridcolor: "rgba(255,255,255,0.06)",
-      showline: false,
-      zeroline: false,
       dtick: isMobile ? 20 : 10,
       tickangle: isMobile ? -45 : 0,
-    },
-    yaxis: {
-      ticksuffix: "%",
-      gridcolor: "rgba(255,255,255,0.06)",
-      showline: false,
-      zeroline: false,
-      rangemode: "tozero",
-    },
-    hoverlabel: {
-      bgcolor: "rgba(15, 23, 42, 0.9)",
-      bordercolor: "rgba(255, 255, 255, 0.1)",
-      font: { color: "#f8fafc", size: isMobile ? 10 : 13 },
     },
     showlegend: true,
     legend: {
@@ -80,7 +63,6 @@ function baseLayout(isMobile) {
       xanchor: "center",
       font: { size: isMobile ? 9 : 11 },
     },
-    hovermode: "x unified",
     annotations: [
       {
         text: "Source: Bundeswahlleiterin, Heft 4",
@@ -100,7 +82,7 @@ function baseLayout(isMobile) {
  * Render the demographics chart with the given selections.
  */
 export function renderDemographicsChart(containerId, data, selections) {
-  const isMobile = window.innerWidth <= 768;
+  const isMobile = window.innerWidth <= MOBILE_BREAKPOINT_PX;
   const years = getElectionYears(data);
   const traces = [];
 
@@ -138,10 +120,7 @@ export function renderDemographicsChart(containerId, data, selections) {
         font: { size: isMobile ? 13 : 16, color: "rgba(255,255,255,0.55)" },
       },
     ];
-    Plotly.react(containerId, [], layout, {
-      responsive: true, displayModeBar: !isMobile,
-      modeBarButtonsToRemove: ["lasso2d", "select2d"],
-    });
+    Plotly.react(containerId, [], layout, plotlyConfig(isMobile));
     return;
   }
 
@@ -150,12 +129,8 @@ export function renderDemographicsChart(containerId, data, selections) {
   // Set y-axis range based on data
   const allY = traces.flatMap((t) => t.y.filter((v) => v !== null));
   const maxVal = allY.length ? Math.max(...allY) : 50;
-  layout.yaxis.range = [0, Math.min(maxVal + 5, 100)];
+  layout.yaxis.range = [0, Math.min(maxVal + Y_AXIS_HEADROOM, 100)];
   layout.xaxis.range = [years[0] - 1, years[years.length - 1] + 1];
 
-  Plotly.react(containerId, traces, layout, {
-    responsive: true,
-    displayModeBar: !isMobile,
-    modeBarButtonsToRemove: ["lasso2d", "select2d"],
-  });
+  Plotly.react(containerId, traces, layout, plotlyConfig(isMobile));
 }

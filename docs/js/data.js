@@ -1,4 +1,5 @@
 import { PARTY_CONFIG, SMOOTHING_HALFLIFE_DAYS } from "./config.js";
+import { fetchJson } from "./shared.js";
 
 const MS_PER_DAY = 86400000;
 const LN2 = Math.LN2;
@@ -8,9 +9,7 @@ const LN2 = Math.LN2;
  * Returns { data: [{date: Date, cdu: number, ...}, ...], updated: string }
  */
 export async function loadPollingData() {
-  const resp = await fetch("data/polling.json");
-  if (!resp.ok) throw new Error(`Failed to load data: ${resp.status}`);
-  const json = await resp.json();
+  const json = await fetchJson("data/polling.json");
   const data = json.data.map((row) => ({
     ...row,
     date: new Date(row.date),
