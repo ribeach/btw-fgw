@@ -1,192 +1,243 @@
 """
-Extract demographic election data from Bundeswahlleiterin Heft 4 PDF.
+Extract demographic election data from the official Bundeswahlleiterin CSV.
 
 Parses "Übersicht 9: Zweitstimmen nach Geschlecht und Altersgruppen seit 1953"
-from pages 15-23 of the Bundeswahlleiterin Heft 4 PDF
-and outputs docs/data/demographics.json.
+from the labeled CSV time series published by Die Bundeswahlleiterin and writes
+docs/data/demographics.json.
 
-Source Publication Page:
-https://www.bundeswahlleiterin.de/bundestagswahlen/2025/publikationen.html
+Source landing page (scraped for the CSV href, so the opaque dam/jcr UUID is
+never hardcoded):
+https://www.bundeswahlleiterin.de/bundestagswahlen/2025/ergebnisse/repraesentative-wahlstatistik.html
 
-PDF URL:
-https://www.bundeswahlleiterin.de/dam/jcr/63623bc5-20fc-449f-a032-7ecd508f04ad/btw25_heft4.pdf
+The discovered download is the file whose basename is `btw_rws_zwst-1953.csv`
+(currently served from a `.../dam/jcr/<uuid>/btw_rws_zwst-1953.csv` path). This
+labeled CSV replaces the previous pdfplumber positional-column parser: columns
+are now keyed on their header labels, so an upstream reflow can no longer
+silently misalign parties.
+
+License: Datenlizenz Deutschland – Namensnennung – Version 2.0 (dl-de/by-2-0).
 """
 
+import csv
 import io
 import json
 import re
+import sys
 from pathlib import Path
+from urllib.parse import urljoin
 
 import httpx
-import pdfplumber
 
-PDF_URL = "https://www.bundeswahlleiterin.de/dam/jcr/63623bc5-20fc-449f-a032-7ecd508f04ad/btw25_heft4.pdf"
-OUTPUT_PATH = Path(__file__).parent.parent / "docs" / "data" / "demographics.json"
+LANDING_URL = (
+    "https://www.bundeswahlleiterin.de/bundestagswahlen/2025/ergebnisse/"
+    "repraesentative-wahlstatistik.html"
+)
+CSV_BASENAME = "btw_rws_zwst-1953.csv"
 
-PARTY_COLUMNS = ["spd", "cdu", "gruene", "fdp", "afd", "csu", "linke", "sonstige"]
+OUTPUT_PATH = Path(__file__).resolve().parent.parent / "docs" / "data" / "demographics.json"
 
-# Known age bracket patterns (regex) and their normalized keys
-AGE_PATTERNS = [
-    (r"^Insgesamt\b", "insgesamt"),
-    (r"^Zusammen\b", "insgesamt"),
-    (r"^18\s*[–\-]\s*24\b", "18-24"),
-    (r"^21\s*[–\-]\s*29\b", "21-29"),
-    (r"^25\s*[–\-]\s*34\b", "25-34"),
-    (r"^30\s*[–\-]\s*44\b", "30-44"),
-    (r"^30\s*[–\-]\s*59\b", "30-59"),
-    (r"^35\s*[–\-]\s*44\b", "35-44"),
-    (r"^45\s*[–\-]\s*59\b", "45-59"),
-    (r"^60\s+und\s+mehr\b", "60+"),
-    (r"^60\s*[–\-]\s*69\b", "60-69"),
-    (r"^70\s+und\s+mehr\b", "70+"),
-]
+# JSON key order for every value object (unchanged from the committed file).
+PARTIES = ["spd", "cdu", "gruene", "fdp", "afd", "csu", "linke", "sonstige"]
 
-# Years where CSU was included in CDU ("In CDU enthalten")
+# CSV party header label -> JSON key.
+PARTY_LABEL_TO_KEY = {
+    "SPD": "spd",
+    "CDU": "cdu",
+    "GRÜNE": "gruene",
+    "FDP": "fdp",
+    "AfD": "afd",
+    "CSU": "csu",
+    "PDS/Die Linke": "linke",
+    "Sonstige": "sonstige",
+}
+
+# CSV "Geschlecht" token -> JSON gender bucket. `m|d|o` is the post-2021 male
+# bucket (Männer incl. divers / ohne Geschlechtseintrag) and MUST map to maenner
+# or the 2021/2025 male rows would be dropped.
+GENDER_MAP = {
+    "Summe": "insgesamt",
+    "m": "maenner",
+    "m|d|o": "maenner",
+    "w": "frauen",
+}
+
+# Cells that mean "no value" -> JSON null (not 0).
+NULL_TOKENS = {"", "–", "-", "—", ".", "...", "…"}
+
+# Years where the CSU result was reported inside CDU ("In CDU enthalten").
 CSU_IN_CDU_YEARS = {1953, 1957}
 
+# Header labels that must be present (besides the age column, matched by prefix).
+REQUIRED_LABELS = ["Bundestagswahl", "Geschlecht", *PARTY_LABEL_TO_KEY.keys()]
 
-def match_age_bracket(text):
-    """Try to match an age bracket at the start of text. Returns (key, remainder) or None."""
-    for pattern, key in AGE_PATTERNS:
-        m = re.match(pattern, text)
-        if m:
-            remainder = text[m.end():].strip()
-            return key, remainder
+
+def discover_csv_url(client: httpx.Client) -> str:
+    """Find the Übersicht-9 CSV URL by scraping the landing page."""
+    print(f"Discovering CSV link from {LANDING_URL}...")
+    resp = client.get(LANDING_URL)
+    resp.raise_for_status()
+
+    hrefs = re.findall(r'href="([^"]+\.csv)"', resp.text, flags=re.IGNORECASE)
+    matches = [h for h in hrefs if h.rsplit("/", 1)[-1].lower() == CSV_BASENAME]
+    if not matches:
+        raise RuntimeError(
+            f"No {CSV_BASENAME} link found on {LANDING_URL}. All .csv hrefs: {hrefs}"
+        )
+
+    url = urljoin(LANDING_URL, matches[0])
+    print(f"Resolved CSV URL: {url}")
+    return url
+
+
+def fetch_csv() -> str:
+    """Download the CSV and return its text (BOM stripped)."""
+    with httpx.Client(follow_redirects=True, timeout=30.0) as client:
+        csv_url = discover_csv_url(client)
+        print(f"Fetching {csv_url}...")
+        resp = client.get(csv_url)
+        resp.raise_for_status()
+
+    # The file is UTF-8 with a BOM; decode so csv.reader sees clean text.
+    return resp.content.decode("utf-8-sig")
+
+
+def normalize_age(token: str) -> str | None:
+    """Normalize an Altersgruppe cell to an existing bracket key, or None."""
+    token = token.strip()
+    if token in ("Summe", "Insgesamt", "Zusammen"):
+        return "insgesamt"
+    m = re.match(r"^>=\s*(\d+)$", token)
+    if m:
+        return f"{m.group(1)}+"
+    m = re.match(r"^(\d+)\s+und\s+mehr$", token)
+    if m:
+        return f"{m.group(1)}+"
+    m = re.match(r"^(\d+)\s*[-–]\s*(\d+)$", token)
+    if m:
+        return f"{m.group(1)}-{m.group(2)}"
     return None
 
 
-def parse_values(text, year):
-    """Parse the value portion of a line into 8 party values.
-
-    Handles:
-    - Numbers with comma decimal (e.g., "29,9")
-    - Dashes for missing values ("–", "-")
-    - CSU placeholder text for 1953/1957 ("In", "CDU", "ent-", "halten")
-    """
-    # For CSU_IN_CDU years, the CSU column contains text like "In", "CDU", "ent-", "halten"
-    # These are interleaved with actual values. We need to filter them out and insert null at CSU position.
-
-    tokens = text.split()
-    csu_placeholders = {"In", "CDU", "ent-", "halten"}
-
-    values = []
-    for t in tokens:
-        t = t.strip()
-        if not t:
-            continue
-        if t in csu_placeholders and year in CSU_IN_CDU_YEARS:
-            continue  # Skip CSU placeholder text
-        if t in ("–", "-", "—"):
-            values.append(None)
-        else:
-            try:
-                values.append(float(t.replace(",", ".")))
-            except ValueError:
-                continue  # Skip unparseable tokens
-
-    # For CSU_IN_CDU years, we get 7 values (CSU column was text, filtered out)
-    # Insert null at position 5 (CSU column index)
-    if year in CSU_IN_CDU_YEARS and len(values) == 7:
-        values.insert(5, None)
-
-    return values
+def parse_cell(cell: str, ctx: str) -> float | None:
+    """Parse a German-decimal value cell; empty/dash placeholders -> None."""
+    cell = cell.strip()
+    if cell in NULL_TOKENS:
+        return None
+    try:
+        return float(cell.replace(",", "."))
+    except ValueError:
+        print(f"WARN: {ctx}: unparseable value {cell!r}; treating as null", file=sys.stderr)
+        return None
 
 
-def extract_demographics():
-    print(f"Downloading {PDF_URL}...")
-    response = httpx.get(PDF_URL, follow_redirects=True)
-    response.raise_for_status()
-    pdf_file = io.BytesIO(response.content)
+def parse_demographics(text: str) -> dict[str, dict]:
+    """Parse the CSV text into {gender: {year: {bracket: {party: value}}}}."""
+    rows = [
+        row
+        for row in csv.reader(io.StringIO(text), delimiter=";")
+        if row and not row[0].lstrip("﻿").startswith("#")
+    ]
+    if not rows:
+        raise RuntimeError("CSV contained no data rows (only comments/blank lines).")
 
-    pdf = pdfplumber.open(pdf_file)
+    header = [cell.strip() for cell in rows[0]]
+    label_to_idx = {label: idx for idx, label in enumerate(header)}
 
-    result = {
-        "insgesamt": {},
-        "frauen": {},
-        "maenner": {},
-    }
+    missing = [label for label in REQUIRED_LABELS if label not in label_to_idx]
+    if missing:
+        raise RuntimeError(
+            f"CSV header is missing expected label(s) {missing}. Actual header: {header}"
+        )
 
-    current_gender = None
-    current_year = None
+    age_idx = next((i for i, label in enumerate(header) if label.startswith("Altersgruppe")), None)
+    if age_idx is None:
+        raise RuntimeError(f"CSV header has no 'Altersgruppe' column. Actual header: {header}")
 
-    for page_idx in range(14, 23):  # Pages 15-23 (0-indexed)
-        page = pdf.pages[page_idx]
-        text = page.extract_text()
-        if not text:
+    result: dict[str, dict] = {"insgesamt": {}, "frauen": {}, "maenner": {}}
+
+    for row in rows[1:]:
+        try:
+            year = int(row[label_to_idx["Bundestagswahl"]].strip())
+        except (ValueError, IndexError):
+            print(f"WARN: skipping row with non-numeric Bundestagswahl: {row}", file=sys.stderr)
             continue
 
-        lines = text.split("\n")
-        for line in lines:
-            line = line.strip()
-            if not line:
-                continue
+        gender_token = row[label_to_idx["Geschlecht"]].strip()
+        gender = GENDER_MAP.get(gender_token)
+        if gender is None:
+            print(f"WARN: {year}: unrecognized Geschlecht {gender_token!r}; skipping row", file=sys.stderr)
+            continue
 
-            # Skip header/footer/footnote lines
-            if any(line.startswith(s) for s in [
-                "Übersicht 9:", "Bundestags-", "SPD", "wahl",
-                "Informationen der", "Bundestagswahl",
-                "1 Bis", "2 1953",
-            ]):
-                continue
-            if line == "davon:":
-                continue
+        age_key = normalize_age(row[age_idx])
+        if age_key is None:
+            print(f"WARN: {year}/{gender}: unrecognized Altersgruppe {row[age_idx]!r}; skipping row", file=sys.stderr)
+            continue
 
-            # Detect gender section
-            if line in ("Insgesamt", "noch: Insgesamt"):
-                current_gender = "insgesamt"
-                continue
-            if line in ("Frauen", "noch: Frauen"):
-                current_gender = "frauen"
-                continue
-            if line in ("Männer", "noch: Männer"):
-                current_gender = "maenner"
-                continue
+        value_row = {
+            key: parse_cell(row[label_to_idx[label]], f"{year}/{gender}/{age_key}/{key}")
+            for label, key in PARTY_LABEL_TO_KEY.items()
+        }
+        # CSU was reported inside CDU for these years; force null regardless of cell.
+        if year in CSU_IN_CDU_YEARS:
+            value_row["csu"] = None
 
-            if current_gender is None:
-                continue
+        result[gender].setdefault(str(year), {})[age_key] = value_row
 
-            # Check if line starts with an election year
-            remaining = line
-            year_match = re.match(r"^(\d{4})²?\s+", remaining)
-            if year_match:
-                current_year = int(year_match.group(1))
-                remaining = remaining[year_match.end():]
+    return result
 
-            if current_year is None:
-                continue
 
-            # Try to match an age bracket
-            bracket_match = match_age_bracket(remaining)
-            if bracket_match is None:
-                continue
+def _prior_row_count() -> int | None:
+    """Total (gender, year, bracket) rows in the committed file, or None."""
+    if not OUTPUT_PATH.exists():
+        return None
+    committed = json.loads(OUTPUT_PATH.read_text(encoding="utf-8"))
+    return sum(
+        len(brackets)
+        for gender in committed.get("genders", {}).values()
+        for brackets in gender.get("elections", {}).values()
+    )
 
-            age_key, value_text = bracket_match
 
-            # Parse the numeric values
-            values = parse_values(value_text, current_year)
+def _guard_write(count: int, prior_count: int | None, output_path: Path, label: str) -> None:
+    """Refuse to overwrite good data with an empty / suspiciously shrunken result."""
+    if count == 0:
+        print(f"ERROR: refusing to write {output_path}: {label} count is 0", file=sys.stderr)
+        sys.exit(1)
+    if prior_count is not None and count < prior_count * 0.9:
+        print(
+            f"ERROR: refusing to write {output_path}: {label} shrank "
+            f"(was {prior_count}, now {count}); aborting",
+            file=sys.stderr,
+        )
+        sys.exit(1)
 
-            if len(values) != 8:
-                print(f"  WARN: {current_gender}/{current_year}/{age_key}: "
-                      f"expected 8 values, got {len(values)} from: {value_text!r}")
-                continue
 
-            row = dict(zip(PARTY_COLUMNS, values))
+def extract_demographics() -> None:
+    text = fetch_csv()
+    result = parse_demographics(text)
 
-            # Ensure CSU is null for years where it was in CDU
-            if current_year in CSU_IN_CDU_YEARS:
-                row["csu"] = None
+    populated_genders = [g for g in result if result[g]]
+    if len(populated_genders) < 3:
+        raise RuntimeError(
+            f"Expected 3 gender buckets, got {len(populated_genders)}: {populated_genders}"
+        )
 
-            year_str = str(current_year)
-            if year_str not in result[current_gender]:
-                result[current_gender][year_str] = {}
-            result[current_gender][year_str][age_key] = row
+    all_years = {year for gender in result.values() for year in gender}
+    if len(all_years) < 18:
+        raise RuntimeError(
+            f"Expected at least 18 election years, got {len(all_years)}: {sorted(all_years)}"
+        )
 
-    pdf.close()
+    total_rows = sum(len(brackets) for gender in result.values() for brackets in gender.values())
+    _guard_write(total_rows, _prior_row_count(), OUTPUT_PATH, "demographics rows")
 
-    # Build output
     output = {
-        "source": "Bundeswahlleiterin, Heft 4 (BTW 2025)",
-        "parties": PARTY_COLUMNS,
+        "source": (
+            "© Die Bundeswahlleiterin / Statistisches Bundesamt (Destatis) 2025 — "
+            "Heft 4, Übersicht 9 (Zweitstimmen nach Geschlecht und Altersgruppen seit 1953)"
+        ),
+        "license": "dl-de/by-2-0",
+        "parties": PARTIES,
         "genders": {
             "insgesamt": {"label": "Both", "elections": result["insgesamt"]},
             "frauen": {"label": "Women", "elections": result["frauen"]},
@@ -200,7 +251,6 @@ def extract_demographics():
     # Print summary
     for gender, data in result.items():
         years = sorted(data.keys())
-        brackets_per_year = {y: len(data[y]) for y in years}
         print(f"{gender}: {len(years)} elections")
         for y in years:
             print(f"  {y}: {list(data[y].keys())}")

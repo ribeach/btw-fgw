@@ -5,10 +5,12 @@ from __future__ import annotations
 import datetime
 import io
 import json
+import os
 import re
+import sys
 from enum import StrEnum
 from pathlib import Path
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 
 import httpx
 import pandas as pd
@@ -21,6 +23,9 @@ INDEX_URL = (
     "https://www.forschungsgruppe.de/Umfragen/Politbarometer/"
     "Langzeitentwicklung_-_Themen_im_Ueberblick/Politik_I/"
 )
+
+# The discovered/redirected workbook download must stay on this host.
+ALLOWED_HOST_SUFFIX = "forschungsgruppe.de"
 
 
 class Party(StrEnum):
@@ -50,8 +55,29 @@ EXCEL_COLUMNS: dict[str, str] = {
 }
 
 OUTPUT_PATH = Path(__file__).resolve().parent.parent / "docs" / "data" / "polling.json"
-ETAG_PATH = Path(__file__).resolve().parent.parent / "docs" / "data" / ".etag"
 PRE_POLLING_PATH = Path(__file__).resolve().parent.parent / "docs" / "data" / "pre-polling.json"
+
+
+def _assert_allowed_host(host: str | None, context: str) -> None:
+    """Raise unless `host` is forschungsgruppe.de or a subdomain of it."""
+    if not host or not (host == ALLOWED_HOST_SUFFIX or host.endswith("." + ALLOWED_HOST_SUFFIX)):
+        raise RuntimeError(
+            f"{context}: refusing host {host!r}; expected {ALLOWED_HOST_SUFFIX} or a subdomain"
+        )
+
+
+def _guard_write(count: int, prior_count: int | None, output_path: Path, label: str) -> None:
+    """Refuse to overwrite good data with an empty / suspiciously shrunken result."""
+    if count == 0:
+        print(f"ERROR: refusing to write {output_path}: {label} count is 0", file=sys.stderr)
+        sys.exit(1)
+    if prior_count is not None and count < prior_count * 0.9:
+        print(
+            f"ERROR: refusing to write {output_path}: {label} shrank "
+            f"(was {prior_count}, now {count}); aborting",
+            file=sys.stderr,
+        )
+        sys.exit(1)
 
 
 def discover_excel_url(client: httpx.Client) -> str:
@@ -77,32 +103,21 @@ def discover_excel_url(client: httpx.Client) -> str:
 
     best = min(projektion, key=score)
     url = urljoin(INDEX_URL, best)
+    _assert_allowed_host(urlparse(url).hostname, "discover_excel_url")
     print(f"Resolved Excel URL: {url}")
     return url
 
 
-def fetch_excel() -> bytes | None:
-    """Fetch the Excel file, skipping download if unchanged (HTTP 304)."""
-    headers = {}
-    if ETAG_PATH.exists():
-        headers["If-None-Match"] = ETAG_PATH.read_text().strip()
-
+def fetch_excel() -> bytes:
+    """Download the Projektion workbook and return its bytes."""
     with httpx.Client(follow_redirects=True, timeout=30.0) as client:
         excel_url = discover_excel_url(client)
         print(f"Fetching {excel_url}...")
-        resp = client.get(excel_url, headers=headers)
+        resp = client.get(excel_url)
 
-    if resp.status_code == 304:
-        print("File unchanged (304 Not Modified), skipping.")
-        return None
-
+    # Pin the final (post-redirect) host before trusting the bytes.
+    _assert_allowed_host(resp.url.host, "fetch_excel")
     resp.raise_for_status()
-
-    etag = resp.headers.get("etag")
-    if etag:
-        ETAG_PATH.parent.mkdir(parents=True, exist_ok=True)
-        ETAG_PATH.write_text(etag)
-
     return resp.content
 
 
@@ -131,6 +146,12 @@ def merge_pre_polling_records(records: list[dict[str, object]]) -> list[dict[str
         if record["date"] not in pre_polling_dates
         and record["date"] > pre_polling_records[-1]["date"]
     ]
+    dropped = len(records) - len(current_records)
+    print(
+        f"INFO: pre-polling merge dropped {dropped} fetched row(s) <= "
+        f"{pre_polling_records[-1]['date']} or overlapping archive dates",
+        file=sys.stderr,
+    )
     cutoff_date = current_records[0]["date"] if current_records else None
     return load_pre_polling_records(cutoff_date) + current_records
 
@@ -144,6 +165,8 @@ def load_existing_records() -> list[dict[str, object]]:
 
 
 def write_output(records: list[dict[str, object]]) -> None:
+    _guard_write(len(records), len(load_existing_records()) or None, OUTPUT_PATH, "polling rows")
+
     output = {
         "updated": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "data": records,
@@ -209,17 +232,81 @@ def locate_and_label_data(content: bytes) -> pd.DataFrame:
     )
 
 
+def crosscheck_against_dawum(latest_record: dict[str, object]) -> None:
+    """Opt-in, READ-ONLY sanity check of the latest FGW row against dawum.
+
+    Gated behind FGW_CROSSCHECK=1 so it never runs in the daily Action. dawum is
+    NEVER a source here — this only warns on disagreement and never mutates
+    `records` or the exit code (consistent with the "do not migrate federal
+    polling to dawum" guardrail).
+    """
+    # dawum Institute_ID 6 = Forschungsgruppe Wahlen; Parliament_ID 0 = Bundestag.
+    FGW_INSTITUTE_ID = "6"
+    BUNDESTAG_ID = "0"
+    # Keyed by casefolded dawum Party "Shortcut" (e.g. "Grüne", "Linke",
+    # "Freie Wähler") so the lookup is robust to upstream casing changes.
+    SHORTCUT_TO_KEY = {
+        "cdu/csu": "cdu", "spd": "spd", "grüne": "gruene", "fdp": "fdp",
+        "linke": "linke", "afd": "afd", "bsw": "bsw", "freie wähler": "fw",
+    }
+    TOLERANCE = 1.5
+
+    try:
+        with httpx.Client(follow_redirects=True, timeout=30.0) as client:
+            resp = client.get("https://api.dawum.de/newest_surveys.json")
+            resp.raise_for_status()
+            api = resp.json()
+
+        parties = api.get("Parties", {})
+        key_by_pid = {
+            pid: SHORTCUT_TO_KEY[meta.get("Shortcut", "").casefold()]
+            for pid, meta in parties.items()
+            if meta.get("Shortcut", "").casefold() in SHORTCUT_TO_KEY
+        }
+
+        fgw_surveys = [
+            s for s in api.get("Surveys", {}).values()
+            if str(s.get("Institute_ID", "")) == FGW_INSTITUTE_ID
+            and str(s.get("Parliament_ID", "")) == BUNDESTAG_ID
+        ]
+        if not fgw_surveys:
+            print("INFO: dawum has no FGW Bundestag survey to cross-check against", file=sys.stderr)
+            return
+
+        latest = max(fgw_surveys, key=lambda s: s.get("Date", ""))
+        results = latest.get("Results", {})
+
+        disagreements = []
+        for pid, value in results.items():
+            key = key_by_pid.get(pid)
+            if key is None or key not in latest_record:
+                continue
+            try:
+                dawum_val = float(value)
+            except (TypeError, ValueError):
+                continue
+            fgw_val = float(latest_record[key])
+            if abs(dawum_val - fgw_val) > TOLERANCE:
+                disagreements.append(f"{key}: FGW={fgw_val} vs dawum={dawum_val}")
+
+        if disagreements:
+            print(
+                f"WARN: FGW Excel latest row ({latest_record.get('date')}) disagrees with "
+                f"dawum FGW ({latest.get('Date')}) beyond {TOLERANCE}pp: "
+                + "; ".join(disagreements),
+                file=sys.stderr,
+            )
+        else:
+            print(
+                f"INFO: FGW Excel latest row agrees with dawum FGW (within {TOLERANCE}pp)",
+                file=sys.stderr,
+            )
+    except Exception as exc:  # read-only check: never fail the pipeline
+        print(f"WARN: dawum cross-check skipped ({exc})", file=sys.stderr)
+
+
 def fetch_and_convert() -> None:
     content = fetch_excel()
-    if content is None:
-        existing_records = load_existing_records()
-        records = merge_pre_polling_records(existing_records)
-        if records:
-            if records == existing_records:
-                print("Existing polling data already includes pre-polling records, skipping.")
-                return
-            write_output(records)
-        return
 
     df = locate_and_label_data(content)
     df["date"] = pd.to_datetime(df["date"], errors="coerce")
@@ -229,11 +316,53 @@ def fetch_and_convert() -> None:
     # Fill missing party values with 0
     for party in Party:
         if party.value not in df.columns:
-            df[party.value] = 0.0
-    df = df.fillna(0.0)
+            df[party.value] = 0.0          # absent column == legitimately 0
 
-    # Compute Sonstige as remainder
     known = [p.value for p in Party if p != Party.SONSTIGE]
+    present_known = [c for c in known if c in df.columns]
+
+    # Coerce party columns to numeric: blank cells become NaN and stray text is
+    # rejected (not silently kept), giving float dtype so the downstream
+    # fillna(0)/sum stay numeric (and avoid pandas object-dtype downcast churn).
+    for col in known:
+        df[col] = pd.to_numeric(df[col], errors="coerce")
+
+    # Warn when a PRESENT party column is blank *within its active span* — i.e.
+    # the party has a real value both before and after this row, so the blank is
+    # a genuine gap whose value is silently treated as 0 and absorbed into
+    # Sonstige. Leading blanks (party not yet founded) and trailing blanks
+    # (party faded out) are structural, not anomalies, so they are NOT flagged;
+    # the FGW workbook keeps those party columns present-but-empty for hundreds
+    # of historical rows, and warning on each would bury any real signal.
+    # Summarized per party to keep the output readable; the numeric result is
+    # unchanged (blanks are still filled with 0 below).
+    for col in present_known:
+        series = df[col]
+        first_seen, last_seen = series.first_valid_index(), series.last_valid_index()
+        if first_seen is None:
+            continue  # entirely blank -> behaves like an absent column
+        gap_dates = [
+            d for d in series.index
+            if first_seen < d < last_seen and pd.isna(series[d])
+        ]
+        if gap_dates:
+            sample = ", ".join(str(d.date()) for d in gap_dates[:3])
+            print(
+                f"WARN: present party column '{col}' was blank (treated as 0) in "
+                f"{len(gap_dates)} row(s) within its active span; e.g. {sample}",
+                file=sys.stderr,
+            )
+
+    raw_sum = df[known].fillna(0.0).sum(axis=1)
+    over = df.index[raw_sum > 100.5]
+    for d in over:
+        print(
+            f"WARN: {d.date()} known parties sum to {raw_sum[d]:.1f} (>100); Sonstige clamped to 0",
+            file=sys.stderr,
+        )
+
+    df = df.fillna(0.0)
+    # Compute Sonstige as remainder
     df[Party.SONSTIGE.value] = (100 - df[known].sum(axis=1)).clip(lower=0)
 
     # Convert to JSON-serializable format
@@ -244,7 +373,16 @@ def fetch_and_convert() -> None:
             record[party.value] = round(float(row[party.value]), 1)
         records.append(record)
 
-    write_output(merge_pre_polling_records(records))
+    records = merge_pre_polling_records(records)
+
+    if os.environ.get("FGW_CROSSCHECK") == "1" and records:
+        crosscheck_against_dawum(records[-1])
+
+    if records == load_existing_records():
+        print("Polling data unchanged vs committed polling.json, skipping write.")
+        return
+
+    write_output(records)
 
 
 if __name__ == "__main__":
