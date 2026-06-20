@@ -191,6 +191,23 @@ footer a:hover {
   100% { transform: rotate(360deg); }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+  header, .status-box, .chart-container, .demographics .selections-panel {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .spinner {
+    animation: none !important;
+    border-bottom-color: var(--text-secondary);
+  }
+}
+
 /* Page Navigation */
 .page-nav {
   display: flex;
@@ -219,6 +236,12 @@ footer a:hover {
 
 /* Demographics chart: explicit height so Plotly's height:100% update doesn't collapse it */
 .demographics #demographics-chart {
+  height: 450px;
+}
+
+/* Federal polling charts: explicit height so Plotly's height:100% update doesn't collapse them on first paint */
+#blocks-chart,
+#parties-chart {
   height: 450px;
 }
 
@@ -379,6 +402,10 @@ footer a:hover {
     gap: 0.3rem;
   }
   .demographics #demographics-chart {
+    height: 350px;
+  }
+  #blocks-chart,
+  #parties-chart {
     height: 350px;
   }
 }

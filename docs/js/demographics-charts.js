@@ -125,6 +125,26 @@ export function renderDemographicsChart(containerId, data, selections) {
     });
   }
 
+  if (traces.length === 0) {
+    const layout = baseLayout(isMobile);
+    layout.xaxis.range = [years[0] - 1, years[years.length - 1] + 1];
+    layout.yaxis.range = [0, 50];
+    layout.annotations = [
+      ...layout.annotations,
+      {
+        text: "Select at least one party",
+        xref: "paper", yref: "paper", x: 0.5, y: 0.5,
+        xanchor: "center", yanchor: "middle", showarrow: false,
+        font: { size: isMobile ? 13 : 16, color: "rgba(255,255,255,0.55)" },
+      },
+    ];
+    Plotly.react(containerId, [], layout, {
+      responsive: true, displayModeBar: !isMobile,
+      modeBarButtonsToRemove: ["lasso2d", "select2d"],
+    });
+    return;
+  }
+
   const layout = baseLayout(isMobile);
 
   // Set y-axis range based on data

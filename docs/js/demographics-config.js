@@ -3,7 +3,7 @@ import { PARTY_CONFIG } from "./config.js";
 // Parties available on the demographics page.
 // "union" is a virtual party combining CDU + CSU.
 export const DEMO_PARTIES = {
-  union:    { label: "Union",    color: PARTY_CONFIG.cdu.color },
+  union:    { label: "Union",    color: PARTY_CONFIG.cdu.lineColor },
   spd:      { label: "SPD",      color: PARTY_CONFIG.spd.color },
   gruene:   { label: "Grüne",    color: PARTY_CONFIG.gruene.color },
   fdp:      { label: "FDP",      color: PARTY_CONFIG.fdp.color },
