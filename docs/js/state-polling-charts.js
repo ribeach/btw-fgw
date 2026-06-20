@@ -87,6 +87,13 @@ export function renderMap(container, svgText, states, valueKey, tooltip) {
   svg.style.width = "100%";
   svg.style.height = "auto";
 
+  // Give the whole map a text alternative; the data table is the full equivalent.
+  container.setAttribute("role", "img");
+  container.setAttribute("aria-label",
+    valueKey === "change"
+      ? "Karte: Veränderung der Links-Rechts-Differenz zur letzten Landtagswahl, je Bundesland"
+      : "Karte: aktuelle Links-Rechts-Differenz in Prozentpunkten, je Bundesland");
+
   const stateById = Object.fromEntries(states.map((s) => [s.id, s]));
 
   for (const path of svg.querySelectorAll("path[id]")) {
@@ -96,6 +103,14 @@ export function renderMap(container, svgText, states, valueKey, tooltip) {
 
     const value = state[valueKey];
     path.style.fill = diffToColor(value);
+
+    // Per-state text alternative so the map carries standalone meaning for AT.
+    const titleText = buildMapPathTitle(state, valueKey);
+    const titleEl = document.createElementNS("http://www.w3.org/2000/svg", "title");
+    titleEl.textContent = titleText;
+    path.insertBefore(titleEl, path.firstChild);
+    path.setAttribute("role", "img");
+    path.setAttribute("aria-label", titleText);
 
     path.addEventListener("mouseenter", () => {
       tooltip.style.display = "block";
@@ -112,6 +127,24 @@ export function renderMap(container, svgText, states, valueKey, tooltip) {
       tooltip.style.top = `${Math.max(8, Math.min(y, window.innerHeight - 160))}px`;
     });
   }
+}
+
+/**
+ * Plain-text label for a single state path (SVG <title> + aria-label).
+ * Reuses formatDiff and the tooltip's direction wording, no HTML.
+ */
+function buildMapPathTitle(state, valueKey) {
+  const value = state[valueKey];
+  if (!Number.isFinite(value)) {
+    return `${state.name}: Keine Daten`;
+  }
+  const valueStr = formatDiff(value);
+  if (valueKey === "change") {
+    const changeDir = value >= 0 ? "nach links" : "nach rechts";
+    return `${state.name}: Veränderung ${changeDir} ${valueStr}`;
+  }
+  const direction = value >= 0 ? "Links führt" : "Rechts führt";
+  return `${state.name}: ${direction} ${valueStr}`;
 }
 
 function buildTooltip(state, valueKey) {
@@ -228,11 +261,16 @@ export function renderTable(el, states) {
       <table class="state-table">
         <thead>
           <tr>
-            ${columns.map((c) => `
-              <th data-key="${c.key}" class="${c.key === sortKey ? (sortAsc ? "sort-asc" : "sort-desc") : ""}">
-                ${c.label}
+            ${columns.map((c) => {
+              const active = c.key === sortKey;
+              const ariaSort = active ? (sortAsc ? "ascending" : "descending") : "none";
+              const cls = active ? (sortAsc ? "sort-asc" : "sort-desc") : "";
+              return `
+              <th scope="col" data-key="${c.key}" aria-sort="${ariaSort}" class="${cls}">
+                <button type="button" class="th-sort">${c.label}</button>
               </th>
-            `).join("")}
+            `;
+            }).join("")}
           </tr>
         </thead>
         <tbody>
@@ -245,6 +283,9 @@ export function renderTable(el, states) {
       </table>
     `;
 
+    // Listener stays on the whole <th> so the full cell (padding + arrow) is a
+    // mouse target as before; the inner <button class="th-sort"> provides the
+    // focusable keyboard control, whose Enter/Space click bubbles up to here.
     el.querySelectorAll("th[data-key]").forEach((th) => {
       th.addEventListener("click", () => {
         const key = th.dataset.key;
