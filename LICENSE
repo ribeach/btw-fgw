@@ -3,9 +3,10 @@ MIT License
 Copyright (c) 2026 ribeach
 
 **Note:** The MIT License applies only to the source code of this repository. The data files stored in the `docs/data/` directory (or generated from external sources) are the property of their respective providers:
-- **Federal Polling:** Forschungsgruppe Wahlen
-- **State Polling:** dawum.de
-- **Demographics:** Sourced from Die Bundeswahlleiterin (Heft 4: Repräsentative Wahlstatistik)
+- **Federal Polling:** Forschungsgruppe Wahlen Politbarometer / GESIS ZA2391 — © Forschungsgruppe Wahlen / GESIS ([terms of use](https://www.gesis.org/en/institute/data-usage-terms))
+- **State Polling:** dawum.de ([ODC-ODbL](https://opendatacommons.org/licenses/odbl/1.0/))
+- **Demographics:** Die Bundeswahlleiterin / Statistisches Bundesamt (Destatis) — Heft 4: Repräsentative Wahlstatistik ([dl-de/by-2-0](https://www.govdata.de/dl-de/by-2-0))
+- **Population:** Statistisches Bundesamt (Destatis) ([dl-de/by-2-0](https://www.govdata.de/dl-de/by-2-0))
 These datasets are subject to their respective copyright and terms of use.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
