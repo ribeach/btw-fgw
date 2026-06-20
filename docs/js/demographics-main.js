@@ -159,13 +159,16 @@ function renderSelections() {
     pillsContainer.className = "party-pills";
 
     for (const [partyKey, partyInfo] of Object.entries(DEMO_PARTIES)) {
-      const pill = document.createElement("span");
+      const pill = document.createElement("button");
+      pill.type = "button";
       pill.className = "party-pill";
+      pill.setAttribute("role", "checkbox");
       pill.style.setProperty("--pill-color", partyInfo.color);
 
-      if (sel.parties.includes(partyKey)) {
-        pill.classList.add("checked");
-      }
+      const isChecked = sel.parties.includes(partyKey);
+      pill.setAttribute("aria-checked", String(isChecked));
+      pill.setAttribute("aria-label", partyInfo.label);
+      if (isChecked) pill.classList.add("checked");
 
       const dot = document.createElement("span");
       dot.className = "pill-dot";
@@ -177,9 +180,11 @@ function renderSelections() {
         if (idx >= 0) {
           sel.parties.splice(idx, 1);
           pill.classList.remove("checked");
+          pill.setAttribute("aria-checked", "false");
         } else {
           sel.parties.push(partyKey);
           pill.classList.add("checked");
+          pill.setAttribute("aria-checked", "true");
         }
         scheduleRender();
       });

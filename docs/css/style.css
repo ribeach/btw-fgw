@@ -42,6 +42,25 @@ body {
   min-height: 100vh;
 }
 
+/* Visible keyboard focus indicator (keyboard-only via :focus-visible) */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.page-nav a:focus-visible,
+.demographics .party-pill:focus-visible,
+.demographics .btn-add:focus-visible,
+.demographics .btn-remove:focus-visible,
+.state-polling .state-table th .th-sort:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Charts are wrapped in <figure>; neutralize the default figure margin */
+figure {
+  margin: 0;
+}
+
 .container {
   max-width: 1200px;
   margin: 0 auto;
@@ -292,9 +311,10 @@ footer a:hover {
   font-size: 0.85rem;
   cursor: pointer;
 }
-.demographics .selection-card select:focus {
+.demographics .selection-card select:focus-visible {
   outline: none;
   border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent);
 }
 
 /* Party Pills */
@@ -311,6 +331,7 @@ footer a:hover {
   padding: 0.25rem 0.6rem;
   border-radius: 9999px;
   border: 1px solid var(--glass-border);
+  font-family: inherit;
   font-size: 0.8rem;
   cursor: pointer;
   transition: all 0.15s;
@@ -574,6 +595,17 @@ footer a:hover {
 }
 .state-polling .state-table th.sort-asc::after  { content: " ↑"; color: var(--accent); }
 .state-polling .state-table th.sort-desc::after { content: " ↓"; color: var(--accent); }
+.state-polling .state-table th .th-sort {
+  background: none;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+}
 .state-polling .state-table tbody tr:hover {
   background: rgba(255,255,255,0.03);
 }
@@ -591,5 +623,26 @@ footer a:hover {
   }
   .state-polling #table-container {
     overflow-x: auto;
+  }
+}
+
+/* Touch devices: raise interactive controls to the ≥44px minimum tap target.
+   Gated on input modality (pointer: coarse), not viewport width, so touch
+   laptops benefit while desktop-mouse density stays compact. */
+@media (pointer: coarse) {
+  .demographics .party-pill {
+    min-height: 44px;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+  .demographics .btn-remove {
+    min-width: 44px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .state-polling .state-table th .th-sort {
+    min-height: 44px;
   }
 }
