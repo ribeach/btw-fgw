@@ -169,6 +169,8 @@ def write_output(records: list[dict[str, object]]) -> None:
 
     output = {
         "updated": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "source": "Forschungsgruppe Wahlen Politbarometer / GESIS ZA2391",
+        "license": "https://www.gesis.org/en/institute/data-usage-terms",
         "data": records,
     }
 

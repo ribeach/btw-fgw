@@ -1,5 +1,7 @@
 {
   "updated": "2026-06-20T07:19:01Z",
+  "source": "Forschungsgruppe Wahlen Politbarometer / GESIS ZA2391",
+  "license": "https://www.gesis.org/en/institute/data-usage-terms",
   "data": [
     {
       "date": "1977-03-15",

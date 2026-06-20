@@ -20,7 +20,7 @@ The site is a static HTML/CSS/JS application hosted on GitHub Pages with no fron
 - **Federal Polling:** A daily GitHub Action fetches the latest Excel workbook from Forschungsgruppe Wahlen, converts it to JSON, and commits it to the repository.
 - **State Polling:** The same action fetches data from the Dawum API, computes weighted averages for each state, and updates the local JSON data. Summary statistics for political blocks are weighted by the latest state population data from Destatis.
 - **Population Data:** A manual script (`scripts/fetch_population.py`) fetches official state population data from the Federal Statistical Office (Destatis) via the `pystatis` library and stores it as `docs/data/population.json`.
-- **Demographics:** Historical data is extracted from official [Bundeswahlleiterin Heft 4](https://www.bundeswahlleiterin.de/bundestagswahlen/2025/publikationen.html) publications using a Python script that fetches the PDF directly from the source and stores it as JSON.
+- **Demographics:** Historical data is extracted from the official [Bundeswahlleiterin Repräsentative Wahlstatistik](https://www.bundeswahlleiterin.de/bundestagswahlen/2025/publikationen.html) (Heft 4) using a Python script that downloads the labeled CSV and stores it as JSON.
 
 The website loads these JSON files and renders charts client-side using **Plotly.js** and custom SVG manipulations.
 
@@ -56,8 +56,9 @@ This dashboard is fully EU GDPR compliant. The application does not use any trac
 **Software:** The source code of this repository is provided under the [MIT License](LICENSE).
 
 **Data:** This project fetches and renders data from various sources. The raw and processed data in the `docs/data/` folder is **not** covered by the MIT License:
-- **Federal Polling:** Property of *Forschungsgruppe Wahlen*.
-- **State Polling:** Sourced via *dawum.de*.
-- **Demographics:** Sourced from *Die Bundeswahlleiterin*.
+- **Federal Polling:** *Forschungsgruppe Wahlen* Politbarometer / GESIS ZA2391 — © Forschungsgruppe Wahlen / GESIS ([terms of use](https://www.gesis.org/en/institute/data-usage-terms)).
+- **State Polling:** *dawum.de* ([ODC-ODbL](https://opendatacommons.org/licenses/odbl/1.0/)).
+- **Demographics:** *Die Bundeswahlleiterin* / Statistisches Bundesamt (Destatis) ([dl-de/by-2-0](https://www.govdata.de/dl-de/by-2-0)).
+- **Population:** *Statistisches Bundesamt (Destatis)* ([dl-de/by-2-0](https://www.govdata.de/dl-de/by-2-0)).
 
 Please consult the respective policies of these providers before reusing the datasets.

@@ -1,5 +1,6 @@
-httpx
-pandas
-openpyxl
-pdfplumber
-pystatis
+# Daily GitHub Action uses: httpx, pandas, openpyxl (fetch_data.py + fetch_state_data.py).
+# Manual-only: pystatis (fetch_population.py — not run by the daily Action).
+httpx==0.28.1
+pandas==2.3.3
+openpyxl==3.1.5
+pystatis==0.5.5

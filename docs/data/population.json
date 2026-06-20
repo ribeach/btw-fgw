@@ -1,5 +1,7 @@
 {
   "updated": "2024-12-31",
+  "source": "Destatis (Statistisches Bundesamt)",
+  "license": "dl-de/by-2-0",
   "data": {
     "DE-SH": 2959517,
     "DE-HH": 1862565,
