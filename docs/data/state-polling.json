@@ -1,5 +1,5 @@
 {
-  "updated": "2026-06-20T07:19:03Z",
+  "updated": "2026-06-21T07:36:45Z",
   "source": "dawum.de (ODC-ODbL)",
   "summary": {
     "avg_diff": -14.9,
@@ -26,7 +26,8 @@
         "right": 48.5,
         "diff": -8.4
       },
-      "change": 2.4
+      "change": 2.4,
+      "is_fallback": false
     },
     {
       "id": "DE-BY",
@@ -41,7 +42,8 @@
         "right": 51.6,
         "diff": -27.3
       },
-      "change": -8.2
+      "change": -8.2,
+      "is_fallback": false
     },
     {
       "id": "DE-BE",
@@ -56,7 +58,8 @@
         "right": 37.3,
         "diff": 11.7
       },
-      "change": -4.3
+      "change": -4.3,
+      "is_fallback": false
     },
     {
       "id": "DE-BB",
@@ -71,7 +74,8 @@
         "right": 41.3,
         "diff": -3.3
       },
-      "change": -8.8
+      "change": -8.8,
+      "is_fallback": false
     },
     {
       "id": "DE-HB",
@@ -86,7 +90,8 @@
         "right": 26.2,
         "diff": 26.4
       },
-      "change": -15.4
+      "change": -15.4,
+      "is_fallback": false
     },
     {
       "id": "DE-HH",
@@ -101,7 +106,8 @@
         "right": 27.3,
         "diff": 35.9
       },
-      "change": -3.9
+      "change": -3.9,
+      "is_fallback": false
     },
     {
       "id": "DE-HE",
@@ -116,7 +122,8 @@
         "right": 53.0,
         "diff": -20.0
       },
-      "change": 3.1
+      "change": 3.1,
+      "is_fallback": false
     },
     {
       "id": "DE-MV",
@@ -131,7 +138,8 @@
         "right": 30.0,
         "diff": 25.8
       },
-      "change": -29.3
+      "change": -29.3,
+      "is_fallback": false
     },
     {
       "id": "DE-NI",
@@ -146,7 +154,8 @@
         "right": 39.1,
         "diff": 11.5
       },
-      "change": -13.4
+      "change": -13.4,
+      "is_fallback": false
     },
     {
       "id": "DE-NW",
@@ -161,7 +170,8 @@
         "right": 41.1,
         "diff": 5.9
       },
-      "change": -17.6
+      "change": -17.6,
+      "is_fallback": false
     },
     {
       "id": "DE-RP",
@@ -176,7 +186,8 @@
         "right": 50.5,
         "diff": -12.3
       },
-      "change": 0.0
+      "change": 0.0,
+      "is_fallback": true
     },
     {
       "id": "DE-SL",
@@ -191,7 +202,8 @@
         "right": 34.2,
         "diff": 16.9
       },
-      "change": -23.9
+      "change": -23.9,
+      "is_fallback": false
     },
     {
       "id": "DE-SN",
@@ -206,7 +218,8 @@
         "right": 62.5,
         "diff": -45.6
       },
-      "change": 3.6
+      "change": 3.6,
+      "is_fallback": false
     },
     {
       "id": "DE-ST",
@@ -221,7 +234,8 @@
         "right": 57.9,
         "diff": -32.6
       },
-      "change": -10.9
+      "change": -10.9,
+      "is_fallback": false
     },
     {
       "id": "DE-SH",
@@ -236,7 +250,8 @@
         "right": 47.8,
         "diff": -11.8
       },
-      "change": 0.8
+      "change": 0.8,
+      "is_fallback": false
     },
     {
       "id": "DE-TH",
@@ -251,7 +266,8 @@
         "right": 56.4,
         "diff": -34.0
       },
-      "change": -6.0
+      "change": -6.0,
+      "is_fallback": false
     }
   ]
 }
