@@ -1,16 +1,16 @@
 {
-  "updated": "2026-07-02T07:06:15Z",
+  "updated": "2026-07-03T08:52:41Z",
   "source": "dawum.de (ODC-ODbL)",
   "summary": {
-    "avg_diff": -14.6,
+    "avg_diff": -14.4,
     "west_avg": -13.1,
-    "east_avg": -20.8,
+    "east_avg": -20.0,
     "max_state": "DE-HH",
     "max_state_name": "Hamburg",
     "max_diff": 33.7,
-    "min_state": "DE-ST",
-    "min_state_name": "Sachsen-Anhalt",
-    "min_diff": -43.5
+    "min_state": "DE-SN",
+    "min_state_name": "Sachsen",
+    "min_diff": -42.0
   },
   "states": [
     {
@@ -225,16 +225,16 @@
       "id": "DE-ST",
       "name": "Sachsen-Anhalt",
       "left": 23.0,
-      "right": 66.5,
-      "diff": -43.5,
-      "poll_date": "2026-05-13",
+      "right": 64.7,
+      "diff": -41.7,
+      "poll_date": "2026-07-03",
       "election": {
         "date": "2021-06-06",
         "left": 25.3,
         "right": 57.9,
         "diff": -32.6
       },
-      "change": -10.9,
+      "change": -9.1,
       "is_fallback": false
     },
     {
@@ -256,17 +256,17 @@
     {
       "id": "DE-TH",
       "name": "Thüringen",
-      "left": 23.0,
-      "right": 63.0,
-      "diff": -40.0,
-      "poll_date": "2026-04-11",
+      "left": 26.0,
+      "right": 62.0,
+      "diff": -36.0,
+      "poll_date": "2026-07-02",
       "election": {
         "date": "2024-09-01",
         "left": 22.4,
         "right": 56.4,
         "diff": -34.0
       },
-      "change": -6.0,
+      "change": -2.0,
       "is_fallback": false
     }
   ]
