@@ -1,5 +1,5 @@
 {
-  "updated": "2026-06-20T07:19:01Z",
+  "updated": "2026-07-18T07:38:15Z",
   "source": "Forschungsgruppe Wahlen Politbarometer / GESIS ZA2391",
   "license": "https://www.gesis.org/en/institute/data-usage-terms",
   "data": [
@@ -9674,6 +9674,19 @@
       "bsw": 0.0,
       "piraten": 0.0,
       "sonstige": 8.0
+    },
+    {
+      "date": "2026-07-17",
+      "cdu": 23.0,
+      "spd": 12.0,
+      "gruene": 14.0,
+      "fdp": 4.0,
+      "linke": 13.0,
+      "afd": 27.0,
+      "fw": 0.0,
+      "bsw": 0.0,
+      "piraten": 0.0,
+      "sonstige": 7.0
     }
   ]
 }
