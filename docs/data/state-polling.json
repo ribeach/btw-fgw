@@ -1,16 +1,16 @@
 {
-  "updated": "2026-07-22T08:13:31Z",
+  "updated": "2026-07-24T08:12:47Z",
   "source": "dawum.de (ODC-ODbL)",
   "summary": {
     "avg_diff": -14.2,
     "west_avg": -12.9,
-    "east_avg": -19.8,
+    "east_avg": -19.9,
     "max_state": "DE-HH",
     "max_state_name": "Hamburg",
     "max_diff": 33.7,
-    "min_state": "DE-SN",
-    "min_state_name": "Sachsen",
-    "min_diff": -42.0
+    "min_state": "DE-ST",
+    "min_state_name": "Sachsen-Anhalt",
+    "min_diff": -42.3
   },
   "states": [
     {
@@ -48,17 +48,17 @@
     {
       "id": "DE-BE",
       "name": "Berlin",
-      "left": 48.5,
-      "right": 37.8,
-      "diff": 10.7,
-      "poll_date": "2026-07-16",
+      "left": 48.1,
+      "right": 37.5,
+      "diff": 10.6,
+      "poll_date": "2026-07-23",
       "election": {
         "date": "2023-02-12",
         "left": 49.0,
         "right": 37.3,
         "diff": 11.7
       },
-      "change": -1.0,
+      "change": -1.1,
       "is_fallback": false
     },
     {
@@ -225,16 +225,16 @@
       "id": "DE-ST",
       "name": "Sachsen-Anhalt",
       "left": 23.0,
-      "right": 64.7,
-      "diff": -41.7,
-      "poll_date": "2026-07-03",
+      "right": 65.3,
+      "diff": -42.3,
+      "poll_date": "2026-07-23",
       "election": {
         "date": "2021-06-06",
         "left": 25.3,
         "right": 57.9,
         "diff": -32.6
       },
-      "change": -9.1,
+      "change": -9.7,
       "is_fallback": false
     },
     {
