@@ -11,6 +11,7 @@ import {
   MAJOR_PARTIES,
   BLOCKS,
   ELECTION_DATES,
+  ELECTION_RESULTS,
   Y_AXIS_HEADROOM,
   MOBILE_BREAKPOINT_PX,
 } from "./config.js";
@@ -331,9 +332,42 @@ function cell(tag, scope, text, className) {
 }
 
 /**
- * Fill a <table> with the tabular equivalent of a chart: one row per federal
- * election plus the latest reading, one column per series. Same smoothed
- * numbers the lines are drawn from, so the table and the picture cannot drift.
+ * Official share for one table column at one election. Party columns are a
+ * direct ELECTION_RESULTS lookup; bloc columns sum the parties that stood
+ * (membership from PARTY_CONFIG.block, matching computeBlocks) with "other"
+ * as the remainder to 100 so unlisted small parties are never dropped.
+ * Returns null when the party did not stand that year.
+ */
+function electionValue(key, dateStr) {
+  const results = ELECTION_RESULTS[dateStr];
+  if (!results) return null;
+  if (key in BLOCKS) {
+    const blocTotal = (block) =>
+      Object.entries(results).reduce(
+        (sum, [party, share]) => (PARTY_CONFIG[party]?.block === block ? sum + share : sum),
+        0
+      );
+    if (key === "other") return 100 - blocTotal("left") - blocTotal("right");
+    return blocTotal(key);
+  }
+  return Number.isFinite(results[key]) ? results[key] : null;
+}
+
+/**
+ * One decimal by default, two when the stored value genuinely carries them:
+ * BSW's 4.98% in 2025 must not round up to a "5.0" that would imply the
+ * five-percent threshold was reached. Null (party did not stand) → em dash.
+ */
+function formatShare(value) {
+  if (!Number.isFinite(value)) return "—";
+  return Math.round(value * 100) % 10 === 0 ? value.toFixed(1) : value.toFixed(2);
+}
+
+/**
+ * Fill a <table> with the tabular counterpart of a chart: one row per federal
+ * election plus the latest reading, one column per series. Election rows carry
+ * the official second-vote result (ELECTION_RESULTS) — not a poll reading —
+ * while the latest row repeats the smoothed numbers the lines are drawn from.
  *
  * @param {HTMLTableElement|null} table
  * @param {{dates: Date[], series: object[]}} chart  a render function's return value
@@ -345,7 +379,7 @@ export function renderChartTable(table, { dates, series } = {}) {
   for (const dateStr of ELECTION_DATES) {
     const index = indexAtOrBefore(dates, Date.parse(`${dateStr}T00:00:00Z`));
     if (index < 0) continue;
-    rows.push({ label: `${dateStr.slice(0, 4)} election`, index });
+    rows.push({ label: `${dateStr.slice(0, 4)} election`, index, dateStr });
   }
   const latestIndex = dates.length - 1;
   if (!rows.length || rows[rows.length - 1].index !== latestIndex) {
@@ -355,7 +389,9 @@ export function renderChartTable(table, { dates, series } = {}) {
   const caption = document.createElement("caption");
   caption.className = "visually-hidden";
   caption.textContent =
-    "Smoothed shares in percent (30-day exponentially weighted average) at each federal election and at the latest reading.";
+    "Official second-vote result in percent at each federal election (Bundeswahlleiterin); " +
+    "the latest row is the smoothed polling average (30-day exponentially weighted). " +
+    "An em dash marks a party that did not stand.";
 
   const headRow = document.createElement("tr");
   headRow.appendChild(cell("th", "col", "Reading"));
@@ -368,8 +404,15 @@ export function renderChartTable(table, { dates, series } = {}) {
     const tr = document.createElement("tr");
     tr.appendChild(cell("th", "row", row.label));
     for (const s of series) {
-      const value = s.values[row.index];
-      tr.appendChild(cell("td", null, Number.isFinite(value) ? value.toFixed(1) : "—", "tnum"));
+      // Election rows show the stored official result (two decimals preserved
+      // where significant); the latest row is a smoothed poll estimate and
+      // stays at the one decimal the rest of the page uses.
+      const text = row.dateStr
+        ? formatShare(electionValue(s.key, row.dateStr))
+        : Number.isFinite(s.values[row.index])
+          ? s.values[row.index].toFixed(1)
+          : "—";
+      tr.appendChild(cell("td", null, text, "tnum"));
     }
     tbody.appendChild(tr);
   }

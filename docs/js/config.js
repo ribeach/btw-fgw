@@ -55,6 +55,27 @@ export const ELECTION_DATES = [
   "2025-02-23",
 ];
 
+// Official final second-vote (Zweitstimmen) shares in percent at each federal
+// election, from the Bundeswahlleiterin. Keys match PARTY_CONFIG: `cdu` is
+// CDU/CSU combined, `linke` is the PDS / Die Linke lineage, and `gruene` in
+// 1990 combines the West and East green lists. A party absent from a year's
+// object did not stand in that election.
+export const ELECTION_RESULTS = {
+  "1980-10-05": { cdu: 44.5, spd: 42.9, fdp: 10.6, gruene: 1.5 },
+  "1983-03-06": { cdu: 48.8, spd: 38.2, fdp: 7.0, gruene: 5.6 },
+  "1987-01-25": { cdu: 44.3, spd: 37.0, fdp: 9.1, gruene: 8.3 },
+  "1990-12-02": { cdu: 43.8, spd: 33.5, fdp: 11.0, gruene: 5.0, linke: 2.4 },
+  "1994-10-16": { cdu: 41.4, spd: 36.4, fdp: 6.9, gruene: 7.3, linke: 4.4 },
+  "1998-09-27": { cdu: 35.1, spd: 40.9, fdp: 6.2, gruene: 6.7, linke: 5.1 },
+  "2002-09-22": { cdu: 38.5, spd: 38.5, fdp: 7.4, gruene: 8.6, linke: 4.0 },
+  "2005-09-18": { cdu: 35.2, spd: 34.2, fdp: 9.8, gruene: 8.1, linke: 8.7 },
+  "2009-09-27": { cdu: 33.8, spd: 23.0, fdp: 14.6, gruene: 10.7, linke: 11.9, piraten: 2.0 },
+  "2013-09-22": { cdu: 41.5, spd: 25.7, fdp: 4.8, gruene: 8.4, linke: 8.6, afd: 4.7, piraten: 2.2, fw: 1.0 },
+  "2017-09-24": { cdu: 32.9, spd: 20.5, fdp: 10.7, gruene: 8.9, linke: 9.2, afd: 12.6, piraten: 0.4, fw: 1.0 },
+  "2021-09-26": { cdu: 24.1, spd: 25.7, fdp: 11.5, gruene: 14.8, linke: 4.9, afd: 10.3, piraten: 0.4, fw: 2.4 },
+  "2025-02-23": { cdu: 28.5, spd: 16.4, fdp: 4.3, gruene: 11.6, linke: 8.8, afd: 20.8, bsw: 4.98, fw: 1.5 },
+};
+
 // EWMA halflife in days: a poll from 30 days ago gets half the weight of today's
 export const SMOOTHING_HALFLIFE_DAYS = 30;
 
