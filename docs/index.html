@@ -1,46 +1,99 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Interactive dashboard mapping German Federal Election Polling Trends from Forschungsgruppe Wahlen (Politbarometer)">
-  <title>German Polling Trends — Politbarometer</title>
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='5.33' fill='%23000'/%3E%3Crect y='5.33' width='16' height='5.33' fill='%23D00'/%3E%3Crect y='10.67' width='16' height='5.33' fill='%23FFCE00'/%3E%3C/svg%3E">
+  <title>Federal Polling Trends — Sonntagsfrage</title>
+  <meta name="description" content="Every Politbarometer projection from Forschungsgruppe Wahlen, plotted by party and by political bloc.">
+  <meta name="theme-color" content="#080B11">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <meta property="og:site_name" content="Sonntagsfrage">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Federal Polling Trends">
+  <meta property="og:description" content="Every Politbarometer projection from Forschungsgruppe Wahlen, plotted by party and by political bloc.">
+  <meta name="twitter:card" content="summary">
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="fonts/fira-sans-condensed-700.woff2">
   <link rel="stylesheet" href="css/style.css">
   <script src="js/vendor/plotly.min.js"></script>
 </head>
 <body>
-  <div class="container">
-    <header>
-      <h1>German Federal Election Polling Trends</h1>
-      <p>Politbarometer data from <a href="https://www.forschungsgruppe.de/Umfragen/Politbarometer/Langzeitentwicklung_-_Themen_im_Ueberblick/Politik_I/#Projektion" target="_blank" rel="noopener">Forschungsgruppe Wahlen</a> and the historical GESIS dataset</p>
-      <nav class="page-nav">
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <div class="site-header__inner">
+      <a class="wordmark" href="index.html">Sonntagsfrage</a>
+      <span class="wordmark-tag">German polling, plotted</span>
+      <nav class="site-nav" aria-label="Primary">
         <a href="index.html" aria-current="page">Polling Trends</a>
         <a href="demographics.html">Demographics</a>
         <a href="state-polling.html">State Polling</a>
       </nav>
-    </header>
-
-    <div id="status" class="status-box" role="status" aria-live="polite">
-      <div class="spinner"></div> <span>Loading…</span>
+      <div id="status" class="stamp" role="status" aria-live="polite">
+        <span class="spinner"></span> <span>Loading…</span>
+      </div>
     </div>
-    <div id="error" role="alert"></div>
+    <div class="spectrum" id="spectrum" hidden></div>
+    <p class="spectrum-readout" id="spectrum-readout" hidden></p>
+  </header>
 
-    <main>
-      <figure class="chart-container" role="img" aria-label="Liniendiagramm: Umfragewerte der politischen Blöcke über die Zeit, Forschungsgruppe Wahlen">
-        <div id="blocks-chart"></div>
+  <div class="container">
+    <main id="main" tabindex="-1">
+      <div class="page-head">
+        <p class="eyebrow">Forschungsgruppe Wahlen · Politbarometer</p>
+        <h1 class="page-title">Federal Polling Trends</h1>
+        <p class="page-standfirst">Every Politbarometer projection since 1977, by party and by bloc. Lines are smoothed with a 30-day exponentially weighted average; the vertical rules mark federal elections.</p>
+      </div>
+
+      <div id="error" role="alert"></div>
+
+      <figure class="chart-container" aria-describedby="blocks-data">
+        <figcaption class="panel-head">
+          <p class="eyebrow">Forschungsgruppe Wahlen · Politbarometer</p>
+          <h2 class="panel-title">Political blocs <span class="panel-title__range tnum" id="blocks-range"></span></h2>
+          <p class="panel-note">30-day weighted average (EWMA) · Left = SPD + Grüne + Linke · Right = CDU/CSU + AfD · Other = FDP + BSW + rest</p>
+        </figcaption>
+        <div id="blocks-chart" role="img" aria-label="Line chart: polling support for the left, right and other political blocs over time, from Forschungsgruppe Wahlen"></div>
+        <details class="chart-data" id="blocks-data">
+          <summary>View the numbers</summary>
+          <div class="chart-data__scroll">
+            <table id="blocks-data-table"></table>
+          </div>
+        </details>
       </figure>
 
-      <figure class="chart-container" role="img" aria-label="Liniendiagramm: Umfragewerte der wichtigsten Parteien über die Zeit, Forschungsgruppe Wahlen">
-        <div id="parties-chart"></div>
+      <figure class="chart-container" aria-describedby="parties-data">
+        <figcaption class="panel-head">
+          <p class="eyebrow">Forschungsgruppe Wahlen · Politbarometer</p>
+          <h2 class="panel-title">Major parties <span class="panel-title__range tnum" id="parties-range"></span></h2>
+          <p class="panel-note">30-day weighted average (EWMA) of Politbarometer projections</p>
+        </figcaption>
+        <div id="parties-chart" role="img" aria-label="Line chart: polling support for the major German parties over time, from Forschungsgruppe Wahlen"></div>
+        <details class="chart-data" id="parties-data">
+          <summary>View the numbers</summary>
+          <div class="chart-data__scroll">
+            <table id="parties-data-table"></table>
+          </div>
+        </details>
       </figure>
     </main>
 
-    <footer>
-      Updated automatically via GitHub Actions
-      <br>Current data source: <a href="https://www.forschungsgruppe.de/Umfragen/Politbarometer/Langzeitentwicklung_-_Themen_im_Ueberblick/Politik_I/#Projektion" target="_blank" rel="noopener">Forschungsgruppe Wahlen Politbarometer</a> (© Forschungsgruppe Wahlen / GESIS — <a href="https://www.gesis.org/en/institute/data-usage-terms" target="_blank" rel="noopener">terms of use</a>)
-      <br>Historical data source: <cite>Forschungsgruppe Wahlen, Mannheim (2026). Politbarometer 1977-2024 (Partial Cumulation) (ZA2391; Version 17.0.0) [Data set]. GESIS, Cologne.</cite> <a href="https://doi.org/10.4232/1.14611" target="_blank" rel="noopener">https://doi.org/10.4232/1.14611</a>
-      <br>Trend lines smoothed using an exponentially weighted average (30-day halflife).
+    <footer class="site-footer">
+      <div class="footer-col">
+        <p class="eyebrow">Data</p>
+        <p>Current: <a href="https://www.forschungsgruppe.de/Umfragen/Politbarometer/Langzeitentwicklung_-_Themen_im_Ueberblick/Politik_I/#Projektion" target="_blank" rel="noopener">Forschungsgruppe Wahlen Politbarometer</a> (© Forschungsgruppe Wahlen / GESIS — <a href="https://www.gesis.org/en/institute/data-usage-terms" target="_blank" rel="noopener">terms of use</a>)</p>
+        <p>Historical: <cite>Forschungsgruppe Wahlen, Mannheim (2026). <span lang="de">Politbarometer</span> 1977-2024 (Partial Cumulation) (ZA2391; Version 17.0.0) [Data set]. GESIS, Cologne.</cite> <a href="https://doi.org/10.4232/1.14611" target="_blank" rel="noopener">doi.org/10.4232/1.14611</a></p>
+      </div>
+      <div class="footer-col">
+        <p class="eyebrow">Method</p>
+        <p>Trend lines are smoothed with an exponentially weighted average at a 30-day halflife: a poll from 30 days ago carries half the weight of today's.</p>
+        <p>Blocs are summed from the party series — left is SPD + Grüne + Die Linke, right is CDU/CSU + AfD, everything else is other.</p>
+      </div>
+      <div class="footer-col">
+        <p class="eyebrow">Code</p>
+        <p><a href="https://github.com/ribeach/btw-fgw" target="_blank" rel="noopener">github.com/ribeach/btw-fgw</a></p>
+        <p>Fira Sans Condensed — SIL OFL 1.1</p>
+        <p>Updated automatically via GitHub Actions</p>
+      </div>
     </footer>
   </div>
 

@@ -32,7 +32,7 @@ export const AGE_BRACKETS = [
   { key: "70+",       label: "70+" },
 ];
 
-export const LINE_COLORS = ["#ff6b6b", "#4ecdc4", "#ffe66d", "#a29bfe", "#fd79a8"];
+export const LINE_COLORS = ["#e05a5a", "#2fa89e", "#d9a521", "#7d6ff0", "#e0578f"];
 export const MAX_SELECTIONS = LINE_COLORS.length;
 
 export const DEFAULT_SELECTIONS = [

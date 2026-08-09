@@ -13,18 +13,63 @@
   font-style: normal;
   font-display: swap;
 }
+/* Display face — headlines and big numerals only. SIL OFL 1.1. */
+@font-face {
+  font-family: 'Fira Sans Condensed';
+  src: url('../fonts/fira-sans-condensed-700.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
 
+/* Chrome is achromatic. All hue is data — party colours live in js/config.js,
+   bloc scale in js/state-polling-config.js. */
 :root {
-  --bg-color: #0f172a;
-  --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-  --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
-  --accent: #38bdf8;
-  --glass-bg: rgba(30, 41, 59, 0.7);
-  --glass-border: rgba(255, 255, 255, 0.1);
-  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
-  --success: #34d399;
-  --error: #ef4444;
+  /* Ink — surfaces, darkest to lightest */
+  --ink-950: #080B11;
+  --ink-900: #0D111A;
+  --surface: #121826;
+  --surface-2: #19202F;
+  --rule: #232B3B;
+  --rule-strong: #33405A;
+
+  /* Bone — text */
+  --bone: #F3F1EC;
+  --bone-dim: #A2A9B8;
+  --bone-faint: #8A93A8;
+  --danger: #F2777A;
+
+  /* Bloc tints — text-safe lifts of the bloc hues, for readouts only */
+  --tint-left: #F08A8A;
+  --tint-right: #7FA8D0;
+
+  /* Space — 4px base */
+  --s1: 4px;
+  --s2: 8px;
+  --s3: 12px;
+  --s4: 16px;
+  --s5: 24px;
+  --s6: 32px;
+  --s7: 48px;
+  --s8: 64px;
+  --s9: 96px;
+
+  /* Radius — printed edges, not pills */
+  --r1: 3px;
+  --r2: 6px;
+
+  /* Type */
+  --font-ui: 'Inter', system-ui, sans-serif;
+  --font-display: 'Fira Sans Condensed', var(--font-ui);
+  --fs-micro: .6875rem;
+  --fs-xs: .75rem;
+  --fs-sm: .8125rem;
+  --fs-base: .9375rem;
+  --fs-lg: 1.125rem;
+  --fs-xl: 1.5rem;
+  --fs-2xl: clamp(1.75rem, 3.5vw, 2.5rem);
+  --lh-tight: 1.15;
+  --lh-body: 1.55;
 }
 
 *, *::before, *::after {
@@ -33,27 +78,57 @@
   padding: 0;
 }
 
+[hidden] {
+  display: none !important;
+}
+
+html {
+  background: var(--ink-950);
+  min-height: 100%;
+}
+
+/* The page ambiance is painted by body::before, a fixed z-index:-1 layer.
+   body must never gain transform / filter / opacity: any of those turn it into
+   a containing block and the ::before layer gets trapped inside the scroll box
+   instead of covering the viewport. */
 body {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  color: var(--text-primary);
-  background: var(--bg-gradient);
-  background-attachment: fixed;
-  line-height: 1.6;
+  font-family: var(--font-ui);
+  font-size: var(--fs-base);
+  color: var(--bone);
+  background: transparent;
+  line-height: var(--lh-body);
   min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(120% 80% at 12% -10%, rgba(120, 140, 190, 0.07), transparent 60%),
+    linear-gradient(180deg, var(--ink-900) 0%, var(--ink-950) 55%);
 }
 
 /* Visible keyboard focus indicator (keyboard-only via :focus-visible) */
 :focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--bone);
   outline-offset: 2px;
 }
-.page-nav a:focus-visible,
-.demographics .party-pill:focus-visible,
-.demographics .btn-add:focus-visible,
-.demographics .btn-remove:focus-visible,
-.state-polling .state-table th .th-sort:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
+
+/* Links in body copy: underlined, hairline-quiet until hover. */
+a {
+  color: var(--bone);
+  text-decoration-line: underline;
+  text-decoration-thickness: 1px;
+  text-decoration-color: color-mix(in srgb, var(--bone) 35%, transparent);
+  text-underline-offset: 3px;
+  transition: text-decoration-color 0.15s ease;
+}
+a:hover {
+  text-decoration-color: var(--bone);
 }
 
 /* Charts are wrapped in <figure>; neutralize the default figure margin */
@@ -61,154 +136,324 @@ figure {
   margin: 0;
 }
 
+/* Utilities */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+.skip-link {
+  position: fixed;
+  top: -100px;
+  left: var(--s4);
+  z-index: 100;
+  padding: var(--s2) var(--s4);
+  background: var(--surface-2);
+  color: var(--bone);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--r1);
+  font-size: var(--fs-sm);
+  text-decoration: none;
+  transition: top 0.15s ease;
+}
+.skip-link:focus {
+  top: var(--s3);
+}
+
 .container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 3rem 1.5rem;
+  padding: var(--s7) var(--s4) var(--s6);
 }
 
-header {
-  text-align: center;
-  margin-bottom: 3rem;
-  animation: fadeInDown 0.8s ease-out;
+#main:focus {
+  outline: none;
 }
 
-header h1 {
-  font-size: 2.5rem;
-  font-weight: 700;
-  background: linear-gradient(to right, #e2e8f0, #bae6fd);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  margin-bottom: 0.5rem;
-  letter-spacing: 0;
+/* ── Masthead ── */
+
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  border-bottom: 1px solid var(--rule);
+  background: color-mix(in srgb, var(--ink-950) 92%, transparent);
+  /* The one permitted blur in the design: the masthead sits over scrolling data. */
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
 }
 
-header p, header a {
-  font-size: 1rem;
-  color: var(--text-secondary);
-}
-
-header a {
-  color: var(--accent);
-  text-decoration: none;
-  transition: color 0.2s;
-}
-
-header a:hover {
-  color: #7dd3fc;
-}
-
-.status-box {
+.site-header__inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--s3) var(--s4);
   display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.75rem;
-  text-align: center;
-  font-size: 0.9rem;
-  color: var(--text-secondary);
-  margin-bottom: 2rem;
-  padding: 1rem 1.5rem;
-  background: var(--glass-bg);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--glass-border);
-  border-radius: 9999px;
-  max-width: max-content;
-  margin-left: auto;
-  margin-right: auto;
-  animation: fadeIn 1s ease-out;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--s2) var(--s4);
 }
 
-.status-box.success {
-  color: var(--success);
+.wordmark {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: var(--lh-tight);
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+  color: var(--bone);
+  text-decoration: none;
 }
-.status-box.success .spinner {
+.wordmark:hover {
+  text-decoration: none;
+}
+
+.wordmark-tag {
+  font-size: var(--fs-micro);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--bone-faint);
+}
+
+.site-nav {
+  display: flex;
+  gap: var(--s4);
+  margin-left: auto;
+}
+.site-nav a {
+  font-size: var(--fs-sm);
+  color: var(--bone-dim);
+  text-decoration: none;
+  padding-bottom: var(--s1);
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s ease, border-color 0.15s ease;
+  white-space: nowrap;
+}
+.site-nav a:hover {
+  color: var(--bone);
+  border-bottom-color: var(--rule-strong);
+  text-decoration: none;
+}
+.site-nav a[aria-current="page"] {
+  color: var(--bone);
+  border-bottom-color: var(--bone);
+}
+
+/* The updated / loading stamp. Keeps id #status — JS writes into it. */
+.stamp {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  font-size: var(--fs-micro);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bone-faint);
+  white-space: nowrap;
+}
+.stamp.success {
+  color: var(--bone-dim);
+}
+.stamp.success .spinner {
+  display: none;
+}
+.stamp:empty {
   display: none;
 }
 
 .spinner {
-  width: 16px;
-  height: 16px;
-  border: 2px solid var(--text-secondary);
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid var(--bone-faint);
   border-bottom-color: transparent;
   border-radius: 50%;
   display: inline-block;
+  flex-shrink: 0;
   animation: rotation 1s linear infinite;
 }
 
-#error {
-  display: none;
-  text-align: center;
-  color: #fca5a5;
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.2);
-  backdrop-filter: blur(10px);
-  border-radius: 12px;
-  padding: 1.2rem;
-  margin-bottom: 2rem;
+/* ── Spectrum bar — the live left / other / right tally under the masthead ── */
+
+.spectrum {
+  display: flex;
+  width: 100%;
+  height: 6px;
+  animation: spectrum-wipe 420ms ease-out both;
+}
+.spectrum-seg {
+  flex-grow: 0;
+  flex-shrink: 0;
+  min-width: 2px;
+  height: 100%;
 }
 
-.chart-container {
-  background: var(--glass-bg);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--glass-border);
-  border-radius: 16px;
-  box-shadow: var(--glass-shadow);
-  margin-bottom: 2.5rem;
-  padding: 1.5rem;
-  transition: box-shadow 0.3s ease;
-  animation: fadeInUp 0.8s ease-out backwards;
+.spectrum-readout {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--s2) var(--s4) var(--s3);
+  font-family: var(--font-display);
+  font-size: var(--fs-micro);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: var(--lh-tight);
+  color: var(--bone-dim);
+}
+.spectrum-caption {
+  color: var(--bone-faint);
 }
 
-.chart-container:nth-child(2) {
-  animation-delay: 0.2s;
+/* ── Page title block ── */
+
+.page-head {
+  margin-bottom: var(--s6);
 }
 
-.chart-container:hover {
-  box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+.eyebrow {
+  font-size: var(--fs-micro);
+  font-weight: 400;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--bone-faint);
+  line-height: var(--lh-tight);
+}
+
+.page-title {
+  font-family: var(--font-display);
+  font-size: var(--fs-2xl);
+  font-weight: 700;
+  line-height: var(--lh-tight);
+  letter-spacing: 0.005em;
+  color: var(--bone);
+  margin: var(--s3) 0 var(--s3);
+}
+
+.page-standfirst {
+  font-size: var(--fs-lg);
+  color: var(--bone-dim);
+  line-height: var(--lh-body);
+  max-width: 62ch;
+}
+
+/* ── Panels — flat opaque stock, hairline rules, a heavier top rule as the
+   "printed" edge. .chart-container and .selections-panel are aliases. ── */
+.panel,
+.chart-container,
+.selections-panel {
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-top: 2px solid var(--rule-strong);
+  border-radius: var(--r1);
+  padding: var(--s5);
+  margin-bottom: var(--s6);
+}
+
+.panel-title {
+  font-family: var(--font-display);
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  line-height: var(--lh-tight);
+  color: var(--bone);
+  margin-bottom: var(--s4);
 }
 
 .chart-container .js-plotly-plot {
   width: 100%;
 }
 
-footer {
-  text-align: center;
-  font-size: 0.85rem;
-  color: var(--text-secondary);
-  padding: 2rem 0;
-  border-top: 1px solid var(--glass-border);
-  margin-top: 3rem;
+#error {
+  display: none;
+  color: var(--danger);
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--danger);
+  border-radius: var(--r1);
+  padding: var(--s4) var(--s5);
+  margin-bottom: var(--s5);
+  font-size: var(--fs-sm);
 }
 
-footer a {
-  color: var(--accent);
-  text-decoration: none;
-  transition: opacity 0.2s;
+.btn-retry {
+  margin-top: var(--s3);
+  background: transparent;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--r1);
+  color: var(--bone);
+  font: inherit;
+  font-size: var(--fs-sm);
+  padding: var(--s2) var(--s4);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
 }
-footer a:hover {
-  opacity: 0.8;
+.btn-retry:hover {
+  background: var(--surface-2);
+  border-color: var(--bone-faint);
+}
+
+/* ── Footer ledger ── */
+
+.site-footer {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--s5);
+  align-items: start;
+  text-align: left;
+  font-size: var(--fs-xs);
+  line-height: var(--lh-body);
+  color: var(--bone-dim);
+  border-top: 1px solid var(--rule);
+  margin-top: var(--s8);
+  padding: var(--s6) 0 var(--s7);
+}
+.site-footer .eyebrow {
+  margin-bottom: var(--s3);
+}
+.footer-col p + p {
+  margin-top: var(--s2);
+}
+.site-footer cite {
+  font-style: normal;
 }
 
 /* Animations */
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-@keyframes fadeInDown {
-  from { opacity: 0; transform: translateY(-20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-@keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
 @keyframes rotation {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes spectrum-wipe {
+  from { clip-path: inset(0 100% 0 0); }
+  to   { clip-path: inset(0 0 0 0); }
+}
+
+/* One orchestrated entrance: the page settles in a single short cascade.
+   The staggered items are the blocks inside <main> plus the footer that follows
+   it; <main> itself is a bare landmark wrapper and is deliberately left out, so
+   no transform ever lands on an ancestor of the fixed-position map tooltip.
+   fill-mode is `backwards` so no transform survives the animation either. */
+.container > #main > *,
+.container > .site-footer {
+  animation: rise-in 480ms cubic-bezier(0.2, 0.6, 0.2, 1) backwards;
+}
+.container > #main > *:nth-child(2) { animation-delay: 60ms; }
+.container > #main > *:nth-child(3) { animation-delay: 120ms; }
+.container > #main > *:nth-child(n+4),
+.container > .site-footer { animation-delay: 180ms; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
@@ -216,41 +461,18 @@ footer a:hover {
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
   }
-  header, .status-box, .chart-container, .demographics .selections-panel {
+  .container > *,
+  .container > #main > *,
+  .spectrum {
     animation: none !important;
     opacity: 1 !important;
     transform: none !important;
+    clip-path: none !important;
   }
   .spinner {
     animation: none !important;
-    border-bottom-color: var(--text-secondary);
+    border-bottom-color: var(--bone-faint);
   }
-}
-
-/* Page Navigation */
-.page-nav {
-  display: flex;
-  justify-content: center;
-  gap: 1rem;
-  margin-top: 1rem;
-}
-.page-nav a {
-  color: var(--text-secondary);
-  text-decoration: none;
-  padding: 0.4rem 1rem;
-  border-radius: 9999px;
-  border: 1px solid var(--glass-border);
-  transition: all 0.2s;
-  font-size: 0.9rem;
-}
-.page-nav a:hover {
-  color: var(--text-primary);
-  border-color: var(--accent);
-}
-.page-nav a[aria-current="page"] {
-  color: var(--accent);
-  border-color: var(--accent);
-  background: rgba(56, 189, 248, 0.1);
 }
 
 /* Demographics chart: explicit height so Plotly's height:100% update doesn't collapse it */
@@ -265,56 +487,38 @@ footer a:hover {
 }
 
 /* Demographics Page — Selection Panel */
-.demographics .selections-panel {
-  background: var(--glass-bg);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--glass-border);
-  border-radius: 16px;
-  box-shadow: var(--glass-shadow);
-  padding: 1.5rem;
-  margin-bottom: 2.5rem;
-  animation: fadeInUp 0.8s ease-out backwards;
-}
-.demographics .selections-panel h2 {
-  font-size: 1.1rem;
-  color: var(--text-secondary);
-  margin-bottom: 1rem;
-  font-weight: 400;
-}
 
 /* Selection Cards */
 .demographics .selection-card {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem;
-  border: 1px solid var(--glass-border);
-  border-radius: 10px;
-  margin-bottom: 0.75rem;
-  background: rgba(15, 23, 42, 0.5);
-  border-left: 4px solid var(--card-color, var(--glass-border));
+  gap: var(--s3);
+  padding: var(--s3);
+  border: 1px solid var(--rule);
+  border-radius: var(--r1);
+  margin-bottom: var(--s3);
+  background: var(--surface-2);
+  border-left: 4px solid var(--card-color, var(--rule-strong));
 }
 .demographics .selection-card .card-controls {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: var(--s2);
   flex-shrink: 0;
 }
 .demographics .selection-card select {
-  background: rgba(15, 23, 42, 0.8);
-  color: var(--text-primary);
-  border: 1px solid var(--glass-border);
-  border-radius: 8px;
-  padding: 0.4rem 0.6rem;
+  background: var(--ink-900);
+  color: var(--bone);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--r1);
+  padding: var(--s1) var(--s2);
   font-family: inherit;
-  font-size: 0.85rem;
+  font-size: var(--fs-sm);
   cursor: pointer;
 }
 .demographics .selection-card select:focus-visible {
-  outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px var(--accent);
+  outline: 2px solid var(--bone);
+  outline-offset: 2px;
 }
 
 /* Party Pills */
@@ -329,14 +533,14 @@ footer a:hover {
   align-items: center;
   gap: 0.3rem;
   padding: 0.25rem 0.6rem;
-  border-radius: 9999px;
-  border: 1px solid var(--glass-border);
+  border-radius: var(--r1);
+  border: 1px solid var(--rule-strong);
   font-family: inherit;
-  font-size: 0.8rem;
+  font-size: var(--fs-xs);
   cursor: pointer;
-  transition: all 0.15s;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
   user-select: none;
-  color: var(--text-secondary);
+  color: var(--bone-dim);
   background: transparent;
 }
 .demographics .party-pill:hover {
@@ -356,19 +560,20 @@ footer a:hover {
 
 /* Add / Remove Buttons */
 .demographics .btn-add {
-  background: rgba(56, 189, 248, 0.1);
-  border: 1px dashed var(--accent);
-  color: var(--accent);
-  border-radius: 10px;
+  background: transparent;
+  border: 1px dashed var(--rule-strong);
+  color: var(--bone);
+  border-radius: var(--r1);
   padding: 0.6rem 1.2rem;
   cursor: pointer;
   font-family: inherit;
-  font-size: 0.9rem;
-  transition: all 0.2s;
+  font-size: var(--fs-sm);
+  transition: background 0.15s, border-color 0.15s;
   width: 100%;
 }
 .demographics .btn-add:hover:not(:disabled) {
-  background: rgba(56, 189, 248, 0.2);
+  background: var(--surface-2);
+  border-color: var(--bone-faint);
 }
 .demographics .btn-add:disabled {
   opacity: 0.4;
@@ -377,17 +582,17 @@ footer a:hover {
 .demographics .btn-remove {
   background: none;
   border: none;
-  color: var(--text-secondary);
+  color: var(--bone-dim);
   cursor: pointer;
   font-size: 1.2rem;
   padding: 0.25rem 0.4rem;
-  border-radius: 50%;
+  border-radius: var(--r1);
   transition: color 0.2s;
   flex-shrink: 0;
   line-height: 1;
 }
 .demographics .btn-remove:hover {
-  color: var(--error);
+  color: var(--danger);
 }
 .demographics .btn-remove:disabled {
   opacity: 0.3;
@@ -397,14 +602,36 @@ footer a:hover {
 /* Mobile breakpoint: keep in sync with MOBILE_BREAKPOINT_PX in docs/js/config.js */
 @media (max-width: 768px) {
   .container {
-    padding: 2rem 1rem;
+    padding: var(--s6) var(--s4) var(--s5);
   }
-  header h1 {
-    font-size: 1.8rem;
+  /* Below the mobile breakpoint the masthead releases: vertical space is scarce
+     and a 3-line sticky header would eat the fold. */
+  .site-header {
+    position: static;
   }
-  .chart-container {
-    padding: 0.75rem;
-    border-radius: 12px;
+  .site-header__inner {
+    padding: var(--s3);
+  }
+  .site-nav {
+    gap: var(--s3);
+    margin-left: 0;
+    width: 100%;
+    order: 3;
+  }
+  .stamp {
+    margin-left: auto;
+  }
+  .spectrum-readout {
+    padding: var(--s2) var(--s3) var(--s3);
+  }
+  .panel,
+  .chart-container,
+  .selections-panel {
+    padding: var(--s3);
+  }
+  .site-footer {
+    grid-template-columns: 1fr;
+    gap: var(--s5);
   }
   .demographics .selection-card {
     flex-direction: column;
@@ -418,7 +645,7 @@ footer a:hover {
     flex: 1;
   }
   .demographics .selections-panel {
-    padding: 1rem;
+    padding: var(--s3);
   }
   .demographics .party-pills {
     gap: 0.3rem;
@@ -446,20 +673,23 @@ footer a:hover {
   padding: 0.5rem;
 }
 .state-polling .segment-label {
-  font-size: 0.78rem;
-  color: var(--text-secondary);
+  font-size: var(--fs-micro);
+  color: var(--bone-faint);
   margin-bottom: 0.3rem;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.08em;
 }
 .state-polling .segment-value {
-  font-size: 1.5rem;
+  font-family: var(--font-display);
+  font-size: var(--fs-xl);
   font-weight: 700;
+  line-height: var(--lh-tight);
+  font-variant-numeric: tabular-nums;
   margin-bottom: 0.2rem;
 }
 .state-polling .segment-sub {
-  font-size: 0.72rem;
-  color: var(--text-secondary);
+  font-size: var(--fs-xs);
+  color: var(--bone-dim);
   line-height: 1.3;
 }
 
@@ -478,15 +708,15 @@ footer a:hover {
   align-items: center;
 }
 .state-polling .map-title {
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--text-primary);
+  font-size: var(--fs-base);
+  font-weight: 700;
+  color: var(--bone);
   margin-bottom: 0.15rem;
   text-align: center;
 }
 .state-polling .map-subtitle {
-  font-size: 0.8rem;
-  color: var(--text-secondary);
+  font-size: var(--fs-sm);
+  color: var(--bone-dim);
   margin-bottom: 0.75rem;
   text-align: center;
 }
@@ -501,101 +731,91 @@ footer a:hover {
   height: auto;
 }
 .state-polling .map-container path {
-  stroke: rgba(15, 23, 42, 0.6);
+  stroke: var(--ink-950);
   stroke-width: 1;
   cursor: pointer;
   transition: opacity 0.12s;
 }
 .state-polling .map-container path:hover {
-  opacity: 0.75;
+  opacity: 0.78;
   stroke-width: 1.5;
-  stroke: rgba(255,255,255,0.4);
+  stroke: var(--bone);
 }
 
-/* Map legend */
-.state-polling .map-legend {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.75rem;
-  margin-top: 1.25rem;
-  font-size: 0.78rem;
-  color: var(--text-secondary);
-}
-.state-polling .legend-scale {
-  width: 120px;
-  height: 10px;
-  border-radius: 5px;
-  background: linear-gradient(to right, #b91c1c, #475569, #1d4ed8);
-}
-.state-polling .legend-right { color: #f87171; }
-.state-polling .legend-left  { color: #93c5fd; }
+/* Map legends are built in JS, one per map — see the appended
+   "state polling page" block at the end of this file. */
+.state-polling .legend-right { color: var(--tint-right); }
+.state-polling .legend-left  { color: var(--tint-left); }
 
 /* Tooltip */
 .map-tooltip {
   position: fixed;
   pointer-events: none;
   z-index: 100;
-  background: rgba(15, 23, 42, 0.95);
-  border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 10px;
+  background: var(--surface);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--r1);
   padding: 0.65rem 0.9rem;
-  font-size: 0.82rem;
-  color: var(--text-primary);
+  font-size: var(--fs-sm);
+  color: var(--bone);
   min-width: 190px;
-  backdrop-filter: blur(8px);
-  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
 }
 .map-tooltip .tooltip-title {
+  font-family: var(--font-display);
   font-weight: 700;
-  font-size: 0.9rem;
+  font-size: var(--fs-base);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
   margin-bottom: 0.4rem;
-  color: var(--accent);
+  color: var(--bone);
 }
 .map-tooltip .tooltip-row {
   display: flex;
   justify-content: space-between;
   gap: 0.75rem;
   margin-bottom: 0.15rem;
+  font-variant-numeric: tabular-nums;
 }
 .map-tooltip .tooltip-row span:first-child {
-  color: var(--text-secondary);
+  color: var(--bone-dim);
 }
 
-/* Shared diff colors */
-.pos { color: #93c5fd; }
-.neg { color: #fca5a5; }
+/* Diff readouts, on the same diverging scale as the maps: a positive number
+   means the LEFT bloc is ahead (red), negative means the right bloc (blue). */
+.pos { color: var(--tint-left); }
+.neg { color: var(--tint-right); }
 
 /* Data table */
 .state-polling .state-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.88rem;
+  font-size: var(--fs-sm);
 }
 .state-polling .state-table th,
 .state-polling .state-table td {
   padding: 0.6rem 0.75rem;
   text-align: right;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
+  border-bottom: 1px solid var(--rule);
+}
+.state-polling .state-table td {
+  font-variant-numeric: tabular-nums;
 }
 .state-polling .state-table th:first-child,
 .state-polling .state-table td:first-child {
   text-align: left;
 }
 .state-polling .state-table th {
-  font-size: 0.78rem;
+  font-size: var(--fs-micro);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--text-secondary);
+  letter-spacing: 0.08em;
+  color: var(--bone-faint);
   cursor: pointer;
   user-select: none;
   white-space: nowrap;
 }
 .state-polling .state-table th:hover {
-  color: var(--accent);
+  color: var(--bone);
 }
-.state-polling .state-table th.sort-asc::after  { content: " ↑"; color: var(--accent); }
-.state-polling .state-table th.sort-desc::after { content: " ↓"; color: var(--accent); }
 .state-polling .state-table th .th-sort {
   background: none;
   border: 0;
@@ -608,7 +828,7 @@ footer a:hover {
   cursor: pointer;
 }
 .state-polling .state-table tbody tr:hover {
-  background: rgba(255,255,255,0.03);
+  background: var(--surface-2);
 }
 
 @media (max-width: 768px) {
@@ -622,15 +842,17 @@ footer a:hover {
   .state-polling .map-container {
     max-width: 100%;
   }
-  .state-polling #table-container {
-    overflow-x: auto;
-  }
 }
 
 /* Touch devices: raise interactive controls to the ≥44px minimum tap target.
    Gated on input modality (pointer: coarse), not viewport width, so touch
    laptops benefit while desktop-mouse density stays compact. */
 @media (pointer: coarse) {
+  .site-nav a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
   .demographics .party-pill {
     min-height: 44px;
     padding-top: 0.5rem;
@@ -646,4 +868,385 @@ footer a:hover {
   .state-polling .state-table th .th-sort {
     min-height: 44px;
   }
+}
+
+/* Very narrow screens: the tagline is the first thing to go. */
+@media (max-width: 480px) {
+  .wordmark-tag {
+    display: none;
+  }
+}
+
+/* Raise the quiet greys when the reader has asked for more contrast. The two
+   bone steps move together so the hierarchy survives — faint stays below dim,
+   both stay well clear of AA on every surface. */
+@media (prefers-contrast: more) {
+  :root {
+    --bone-dim: #CBD2DE;
+    --bone-faint: #A9B2C4;
+    --rule: #3A465C;
+  }
+}
+
+/* Forced-colours (Windows high contrast): the OS owns text and surfaces, so
+   only the data marks opt out — everything else must inherit system colours. */
+@media (forced-colors: active) {
+  .site-header {
+    background: Canvas;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  .site-nav a[aria-current="page"] {
+    border-bottom-color: Highlight;
+    color: Highlight;
+  }
+  .state-polling .map-container path,
+  .spectrum-seg,
+  .state-polling .legend-swatch,
+  .demographics .party-pill .pill-dot {
+    forced-color-adjust: none;
+  }
+  .panel,
+  .chart-container,
+  .selections-panel,
+  .map-tooltip {
+    border-color: CanvasText;
+  }
+  .skip-link:focus {
+    background: Canvas;
+    color: CanvasText;
+  }
+}
+
+/* === Federal polling page === */
+
+/* Panel head — the chart's masthead. Lives in HTML rather than inside Plotly,
+   so it is selectable, translatable and legible to assistive tech. */
+.panel-head {
+  margin-bottom: var(--s4);
+  padding-bottom: var(--s3);
+  border-bottom: 1px solid var(--rule);
+}
+.panel-head .eyebrow {
+  margin-bottom: var(--s2);
+}
+.panel-head .panel-title {
+  margin-bottom: var(--s2);
+}
+
+.panel-title__range {
+  color: var(--bone-faint);
+  letter-spacing: 0.04em;
+}
+
+.panel-note {
+  font-size: var(--fs-xs);
+  line-height: 1.5;
+  color: var(--bone-dim);
+  max-width: 80ch;
+}
+
+/* "View the numbers" — the tabular equivalent of each chart, for readers the
+   SVG cannot serve. Folded away by default; the figure points at it via
+   aria-describedby. */
+.chart-data {
+  margin-top: var(--s4);
+  padding-top: var(--s3);
+  border-top: 1px solid var(--rule);
+}
+.chart-data > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+  font-size: var(--fs-micro);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+}
+.chart-data > summary::-webkit-details-marker {
+  display: none;
+}
+.chart-data > summary::before {
+  content: "+";
+  display: inline-block;
+  width: 1em;
+  text-align: center;
+  color: var(--bone-faint);
+}
+.chart-data[open] > summary::before {
+  content: "−";
+}
+.chart-data > summary:hover {
+  color: var(--bone);
+}
+
+.chart-data__scroll {
+  margin-top: var(--s3);
+  overflow-x: auto;
+}
+
+.chart-data table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-xs);
+}
+.chart-data th,
+.chart-data td {
+  padding: var(--s2) var(--s3);
+  text-align: right;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--rule);
+}
+.chart-data thead th {
+  font-size: var(--fs-micro);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--bone-faint);
+}
+.chart-data thead th:first-child,
+.chart-data tbody th[scope="row"] {
+  text-align: left;
+}
+.chart-data tbody th[scope="row"] {
+  font-weight: 400;
+  color: var(--bone-dim);
+}
+/* The closing row is the live reading — the only one set in full-strength bone. */
+.chart-data tbody tr:last-child th,
+.chart-data tbody tr:last-child td {
+  border-bottom: 0;
+  color: var(--bone);
+}
+
+@media (pointer: coarse) {
+  .chart-data > summary {
+    min-height: 44px;
+  }
+}
+
+/* The federal charts carry a horizontal legend and a labelled election axis
+   below the plot, so they need more height on mobile than the 350px default. */
+@media (max-width: 768px) {
+  #blocks-chart,
+  #parties-chart {
+    height: 420px;
+  }
+}
+
+/* === State polling page === */
+
+/* Segment bar as a ledger: four columns of one table, divided by hairlines
+   rather than four floating tiles. */
+.state-polling .segment-bar {
+  gap: 0;
+}
+.state-polling .segment-card {
+  padding: var(--s2) var(--s4);
+}
+.state-polling .segment-card + .segment-card {
+  border-left: 1px solid var(--rule);
+}
+
+/* Map legend — one per map, built in JS so each carries its own domain.
+   Discrete swatches sampled from the same ramp that fills the states, which a
+   linear CSS gradient could not honestly represent (the fills run on sqrt). */
+.state-polling .map-legend {
+  width: 100%;
+  max-width: 340px;
+  margin-top: var(--s4);
+  font-size: var(--fs-xs);
+  color: var(--bone-dim);
+}
+.state-polling .legend-swatches {
+  display: flex;
+  gap: 2px;
+}
+.state-polling .legend-swatch {
+  flex: 1 1 0;
+  height: 10px;
+  border: 0;
+}
+.state-polling .legend-ticks {
+  display: flex;
+  justify-content: space-between;
+  margin-top: var(--s1);
+  font-size: var(--fs-micro);
+  font-variant-numeric: tabular-nums;
+  color: var(--bone-faint);
+}
+.state-polling .legend-ends {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--s3);
+  margin-top: 2px;
+  font-size: var(--fs-xs);
+}
+.state-polling .legend-note {
+  margin-top: var(--s2);
+  font-size: var(--fs-micro);
+  color: var(--bone-faint);
+  line-height: 1.35;
+}
+.state-polling .maps-key {
+  margin-top: var(--s5);
+  padding-top: var(--s3);
+  border-top: 1px solid var(--rule);
+  text-align: center;
+  font-size: var(--fs-xs);
+  color: var(--bone-dim);
+}
+
+/* Keyboard-reachable states. The focus ring is drawn as a stroke on the shape
+   itself; overflow:visible keeps the outer half of that stroke from being
+   clipped by the SVG viewport on border states. */
+.state-polling .map-container svg {
+  overflow: visible;
+}
+.state-polling .map-container path:focus {
+  outline: none;
+}
+.state-polling .map-container path:focus-visible {
+  stroke: var(--bone);
+  stroke-width: 2.5;
+}
+
+/* Tooltip flag for a state with no current survey. */
+.map-tooltip .tooltip-note {
+  margin-bottom: 0.35rem;
+  padding-bottom: 0.3rem;
+  border-bottom: 1px solid var(--rule);
+  font-size: var(--fs-micro);
+  line-height: 1.35;
+  color: var(--bone-dim);
+  max-width: 22ch;
+}
+
+/* Table: one horizontally scrolling region at every width, with the state
+   column pinned so a scrolled row never loses its label. */
+.state-polling #table-container {
+  overflow-x: auto;
+  /* The "skip maps" link lands here; clear the sticky masthead. */
+  scroll-margin-top: 96px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--rule-strong) transparent;
+}
+/* Fade the right edge only: a left-hand fade would dissolve the sticky state
+   column, which is the one thing that must stay legible while scrolling.
+   Gated on the classes renderTable's updateScrollAffordance sets — the mask is
+   an affordance for hidden content, so it must not dim the last column at
+   widths where the table fits, or once the reader has scrolled to the end.
+   Dropped while focused too: a mask clips the focus ring along with everything
+   else the element paints. */
+.state-polling #table-container.is-scrollable:not(.is-at-end):not(:focus-visible) {
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent 100%);
+  mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent 100%);
+}
+.state-polling #table-container::-webkit-scrollbar {
+  height: 8px;
+}
+.state-polling #table-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+.state-polling #table-container::-webkit-scrollbar-thumb {
+  background: var(--rule-strong);
+  border-radius: 4px;
+}
+.state-polling .state-table {
+  min-width: 660px;
+}
+.state-polling .state-table th,
+.state-polling .state-table td {
+  white-space: nowrap;
+}
+.state-polling .state-table td {
+  font-variant-numeric: tabular-nums;
+}
+.state-polling .state-table th:first-child,
+.state-polling .state-table td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--surface);
+}
+.state-polling .state-table th:first-child::after,
+.state-polling .state-table td:first-child::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--rule);
+}
+/* The sticky cell paints its own background, so the row hover has to be
+   repeated on it or the first column stays dark while the rest lifts. */
+.state-polling .state-table tbody tr:hover td:first-child {
+  background: var(--surface-2);
+}
+
+/* Sort affordance: an idle ↕ in the same slot the active ↑/↓ occupies, so
+   sorting never nudges the header text sideways. */
+.state-polling .state-table th .th-sort::after {
+  content: " ↕";
+  opacity: 0.28;
+}
+.state-polling .state-table th.sort-asc .th-sort::after {
+  content: " ↑";
+  opacity: 1;
+  color: var(--bone);
+}
+.state-polling .state-table th.sort-desc .th-sort::after {
+  content: " ↓";
+  opacity: 1;
+  color: var(--bone);
+}
+
+/* States running on the last election result instead of a current survey. */
+.state-polling .state-table .fallback-mark {
+  color: var(--bone-faint);
+  margin-left: 1px;
+}
+.state-polling .state-table tr.is-fallback td + td {
+  opacity: 0.62;
+}
+.state-polling .table-footnote {
+  margin-top: var(--s3);
+  font-size: var(--fs-xs);
+  color: var(--bone-faint);
+  line-height: 1.4;
+}
+
+@media (max-width: 768px) {
+  /* Two columns: the divider belongs between the pair, not down the margin. */
+  .state-polling .segment-card:nth-child(odd) {
+    border-left: 0;
+  }
+  .state-polling .segment-card:nth-child(n+3) {
+    border-top: 1px solid var(--rule);
+    padding-top: var(--s3);
+    margin-top: var(--s2);
+  }
+  .state-polling .map-legend {
+    max-width: 100%;
+  }
+}
+
+/* === Demographics page === */
+
+.demographics .chart-footnote {
+  margin-top: var(--s3);
+  font-size: var(--fs-xs);
+  color: var(--bone-faint);
+}
+
+/* Union's pill dot inherits CDU's near-white lineColor, which without help
+   reads as a disabled swatch against the dark chrome. The outline marks it as
+   an intentional near-white swatch rather than a greyed-out control. */
+.demographics .party-pill .pill-dot--union {
+  outline: 1px solid var(--bone-faint);
+  outline-offset: 1px;
 }

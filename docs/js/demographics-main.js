@@ -1,5 +1,5 @@
 import { loadDemographicsData, getElectionYears } from "./demographics-data.js";
-import { renderDemographicsChart } from "./demographics-charts.js";
+import { renderDemographicsChart, renderDemographicsTable } from "./demographics-charts.js";
 import {
   DEMO_PARTIES,
   GENDERS,
@@ -8,11 +8,15 @@ import {
   MAX_SELECTIONS,
   DEFAULT_SELECTIONS,
 } from "./demographics-config.js";
-import { getStatusEls, showLoading, showError } from "./shared.js";
+import { getStatusEls, showLoading, showError, ensurePlotly } from "./shared.js";
+import { renderSpectrum } from "./shell.js";
 
 let demoData = null;
 let selections = [];
 let nextId = 0;
+
+/** The add/resize listeners are bound once, even if a retry re-runs init(). */
+let listenersBound = false;
 
 const PARTY_ORDER = Object.keys(DEMO_PARTIES);
 const sortParties = (arr) => [...arr].sort((a, b) => PARTY_ORDER.indexOf(a) - PARTY_ORDER.indexOf(b));
@@ -41,12 +45,52 @@ function serializeSelections(sels) {
   return params;
 }
 
-function parseSelectionsFromURL() {
+/** Every gender key actually present in the loaded dataset. */
+function validGendersFromData(data) {
+  return new Set(Object.keys(data.genders || {}));
+}
+
+/** Every age-bracket key that appears under any election, for any gender. */
+function validAgeBracketsFromData(data) {
+  const set = new Set();
+  for (const genderData of Object.values(data.genders || {})) {
+    for (const electionData of Object.values(genderData.elections || {})) {
+      for (const bracket of Object.keys(electionData)) set.add(bracket);
+    }
+  }
+  return set;
+}
+
+/** The raw party fields the dataset actually carries per bracket (cdu, spd, ...). */
+function dataPartyFields(data) {
+  for (const genderData of Object.values(data.genders || {})) {
+    for (const electionData of Object.values(genderData.elections || {})) {
+      for (const bracketData of Object.values(electionData)) {
+        return new Set(Object.keys(bracketData));
+      }
+    }
+  }
+  return new Set();
+}
+
+/**
+ * Parse `?s=` selections from the URL, validated against the loaded dataset
+ * rather than just the static config lists — an unknown gender, age bracket
+ * or party (or a whole selection with nothing left after filtering) is
+ * dropped rather than trusted. Callers fall back to DEFAULT_SELECTIONS when
+ * nothing valid survives (this returns null in that case).
+ */
+function parseSelectionsFromURL(data) {
   const raw = new URLSearchParams(window.location.search).getAll("s");
   if (!raw.length) return null;
-  const validGenders = new Set(Object.keys(GENDERS));
-  const validAges = new Set(AGE_BRACKETS.map((b) => b.key));
-  const validParties = new Set(Object.keys(DEMO_PARTIES));
+
+  const validGenders = validGendersFromData(data);
+  const validAges = validAgeBracketsFromData(data);
+  const fields = dataPartyFields(data);
+  const validParties = new Set(
+    Object.keys(DEMO_PARTIES).filter((p) => (p === "union" ? fields.has("cdu") : fields.has(p)))
+  );
+
   const result = [];
   for (const entry of raw) {
     if (result.length >= MAX_SELECTIONS) break;
@@ -96,22 +140,37 @@ function createSelection(opts) {
 
 // --- UI Rendering ---
 
+/**
+ * Accessible name for one selection card, e.g. "Line 2: Women, 30–44". The
+ * card is a group of controls that only make sense together, so it needs a
+ * name of its own; the ordinal is what the "+ Add Line" button promises.
+ */
+function cardLabel(index, sel) {
+  const bracket = AGE_BRACKETS.find((b) => b.key === sel.ageBracket);
+  const ageLabel = bracket ? bracket.label : sel.ageBracket;
+  return `Line ${index + 1}: ${GENDERS[sel.gender] ?? sel.gender}, ${ageLabel}`;
+}
+
 function renderSelections() {
   const listEl = document.getElementById("selections-list");
   const addBtn = document.getElementById("add-selection");
 
   listEl.innerHTML = "";
 
-  for (const sel of selections) {
+  for (const [index, sel] of selections.entries()) {
     const card = document.createElement("div");
     card.className = "selection-card";
     card.style.setProperty("--card-color", sel.color);
+    card.setAttribute("role", "group");
+    card.setAttribute("aria-label", cardLabel(index, sel));
 
     // Controls row: gender + age dropdowns
     const controls = document.createElement("div");
     controls.className = "card-controls";
 
     const genderSelect = document.createElement("select");
+    genderSelect.id = `sel-${sel.id}-gender`;
+    genderSelect.name = `sel-${sel.id}-gender`;
     genderSelect.setAttribute("aria-label", "Gender");
     for (const [key, label] of Object.entries(GENDERS)) {
       const opt = document.createElement("option");
@@ -122,10 +181,13 @@ function renderSelections() {
     }
     genderSelect.addEventListener("change", () => {
       sel.gender = genderSelect.value;
+      card.setAttribute("aria-label", cardLabel(index, sel));
       scheduleRender();
     });
 
     const ageSelect = document.createElement("select");
+    ageSelect.id = `sel-${sel.id}-age`;
+    ageSelect.name = `sel-${sel.id}-age`;
     ageSelect.setAttribute("aria-label", "Age bracket");
     for (const bracket of AGE_BRACKETS) {
       const opt = document.createElement("option");
@@ -136,6 +198,7 @@ function renderSelections() {
     }
     ageSelect.addEventListener("change", () => {
       sel.ageBracket = ageSelect.value;
+      card.setAttribute("aria-label", cardLabel(index, sel));
       scheduleRender();
     });
 
@@ -172,7 +235,7 @@ function renderSelections() {
       if (isChecked) pill.classList.add("checked");
 
       const dot = document.createElement("span");
-      dot.className = "pill-dot";
+      dot.className = partyKey === "union" ? "pill-dot pill-dot--union" : "pill-dot";
       pill.appendChild(dot);
       pill.appendChild(document.createTextNode(partyInfo.label));
 
@@ -210,24 +273,54 @@ function scheduleRender() {
   renderTimer = setTimeout(() => {
     if (demoData) {
       renderDemographicsChart("demographics-chart", demoData, selections);
+      renderDemographicsTable("demographics-table-wrap", demoData, selections);
     }
   }, 100);
+}
+
+/**
+ * Feed the masthead spectrum bar the 2025 second-vote split for all voters
+ * (gender "insgesamt", age bracket "insgesamt"), independent of whatever
+ * lines the reader has configured. Silently skipped if 2025 or any of the
+ * six parties it needs is missing from the dataset \u2014 the bar stays hidden
+ * rather than showing a partial or misleading split.
+ */
+function renderNationalSpectrum(data) {
+  const bracket = data.genders?.insgesamt?.elections?.["2025"]?.insgesamt;
+  if (!bracket) return;
+
+  const needed = ["spd", "gruene", "linke", "cdu", "csu", "afd"];
+  if (needed.some((key) => bracket[key] == null)) return;
+
+  const left = bracket.spd + bracket.gruene + bracket.linke;
+  const right = bracket.cdu + bracket.csu + bracket.afd;
+  const other = 100 - left - right;
+
+  renderSpectrum(
+    document.getElementById("spectrum"),
+    document.getElementById("spectrum-readout"),
+    { left, other, right, caption: "Bundestagswahl 2025 second votes, all voters" }
+  );
 }
 
 // --- Initialization ---
 
 async function init() {
   const { statusEl, errorEl } = getStatusEls();
-  const addBtn = document.getElementById("add-selection");
+
+  // Idempotent: a retry after a failed load must not duplicate lines.
+  selections = [];
+  nextId = 0;
 
   try {
+    ensurePlotly();
     showLoading(statusEl, "Loading data\u2026");
 
     demoData = await loadDemographicsData();
     if (!getElectionYears(demoData).length) throw new Error("Demographics dataset is empty");
 
-    // Initialize selections from URL or defaults
-    const fromURL = parseSelectionsFromURL();
+    // Initialize selections from URL or defaults, validated against the data
+    const fromURL = parseSelectionsFromURL(demoData);
     for (const def of fromURL ?? DEFAULT_SELECTIONS) {
       selections.push(createSelection(def));
     }
@@ -235,32 +328,41 @@ async function init() {
     updateURL();
     renderSelections();
     renderDemographicsChart("demographics-chart", demoData, selections);
+    renderDemographicsTable("demographics-table-wrap", demoData, selections);
+    renderNationalSpectrum(demoData);
 
-    // Resize handler
-    let lastWidth = window.innerWidth;
-    window.addEventListener("resize", () => {
-      if (window.innerWidth === lastWidth) return;
-      lastWidth = window.innerWidth;
-      scheduleRender();
-    });
+    if (!listenersBound) {
+      listenersBound = true;
+      const addBtn = document.getElementById("add-selection");
 
-    // Add button
-    addBtn.addEventListener("click", () => {
-      if (selections.length >= MAX_SELECTIONS) return;
-      selections.push(createSelection({
-        gender: "insgesamt",
-        ageBracket: "insgesamt",
-        parties: ["union"],
-      }));
-      renderSelections();
-      scheduleRender();
-    });
+      let lastWidth = window.innerWidth;
+      window.addEventListener("resize", () => {
+        if (window.innerWidth === lastWidth) return;
+        lastWidth = window.innerWidth;
+        scheduleRender();
+      });
+
+      addBtn.addEventListener("click", () => {
+        if (selections.length >= MAX_SELECTIONS) return;
+        selections.push(createSelection({
+          gender: "insgesamt",
+          ageBracket: "insgesamt",
+          parties: ["union"],
+        }));
+        renderSelections();
+        scheduleRender();
+      });
+    }
 
     statusEl.innerHTML = "<span>Representative election statistics (1953\u20132025)</span>";
     statusEl.classList.add("success");
   } catch (err) {
     console.error(err);
-    showError(statusEl, errorEl, `Failed to load demographics data: ${err.message}`);
+    showError(statusEl, errorEl, `Failed to load demographics data: ${err.message}`, () => {
+      errorEl.replaceChildren();
+      errorEl.style.display = "none";
+      init();
+    });
   }
 }
 
