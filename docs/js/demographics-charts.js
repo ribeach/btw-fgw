@@ -14,6 +14,7 @@ import {
   plotlyConfig,
   layoutEndLabels,
   buildEndLabelAnnotations,
+  inlineEndLabel,
   measureRightMargin,
 } from "./shared.js";
 
@@ -85,8 +86,9 @@ export function renderDemographicsChart(containerId, data, selections) {
   const isMobile = window.innerWidth <= MOBILE_BREAKPOINT_PX;
   const years = getElectionYears(data);
   const traces = [];
-  // Short label + colour + most recent non-null value, for the desktop
-  // end-of-line labels.
+  // Short label + colour + most recent non-null value AND the year it falls on,
+  // for the desktop end-of-line labels. The year matters: age brackets come and
+  // go between elections, so plenty of lines stop decades before the axis does.
   const endLabelEntries = [];
 
   for (const sel of selections) {
@@ -112,7 +114,12 @@ export function renderDemographicsChart(containerId, data, selections) {
 
     for (let i = yValues.length - 1; i >= 0; i--) {
       if (yValues[i] !== null) {
-        endLabelEntries.push({ text: shortLabel, color: sel.color, yValue: yValues[i] });
+        endLabelEntries.push({
+          text: shortLabel,
+          color: sel.color,
+          yValue: yValues[i],
+          xValue: years[i],
+        });
         break;
       }
     }
@@ -148,15 +155,30 @@ export function renderDemographicsChart(containerId, data, selections) {
   const useEndLabels = !isMobile && endLabelEntries.length >= 2;
 
   if (useEndLabels) {
-    const container = document.getElementById(containerId);
-    const containerHeight = (container && container.clientHeight) || FALLBACK_CONTAINER_HEIGHT_PX;
-    layout.margin = { ...layout.margin, r: measureRightMargin(endLabelEntries) };
-    const plotHeightPx = Math.max(80, containerHeight - layout.margin.t - layout.margin.b);
-    const pxPerUnit = yMax > 0 ? plotHeightPx / yMax : 0;
+    // Only lines that run all the way to the last election earn a gutter label.
+    // Everything else is labelled where it actually stops, so a bracket last
+    // reported in 1969 is never read off the right-hand edge as a 2025 value.
+    const lastYear = years[years.length - 1];
+    const gutter = endLabelEntries.filter((entry) => entry.xValue === lastYear);
+    const inline = endLabelEntries.filter((entry) => entry.xValue !== lastYear);
 
-    const laid = layoutEndLabels(endLabelEntries, { plotHeightPx, yMax });
+    const annotations = [];
+
+    if (gutter.length) {
+      const container = document.getElementById(containerId);
+      const containerHeight = (container && container.clientHeight) || FALLBACK_CONTAINER_HEIGHT_PX;
+      layout.margin = { ...layout.margin, r: measureRightMargin(gutter) };
+      const plotHeightPx = Math.max(80, containerHeight - layout.margin.t - layout.margin.b);
+      const pxPerUnit = yMax > 0 ? plotHeightPx / yMax : 0;
+
+      const laid = layoutEndLabels(gutter, { plotHeightPx, yMax });
+      annotations.push(...buildEndLabelAnnotations(laid, { pxPerUnit }));
+    }
+
+    annotations.push(...inline.map(inlineEndLabel));
+
     layout.showlegend = false;
-    layout.annotations = buildEndLabelAnnotations(laid, { pxPerUnit });
+    layout.annotations = annotations;
   } else {
     layout.showlegend = true;
     layout.legend = legendLayout(isMobile);

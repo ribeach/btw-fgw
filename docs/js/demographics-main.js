@@ -140,22 +140,37 @@ function createSelection(opts) {
 
 // --- UI Rendering ---
 
+/**
+ * Accessible name for one selection card, e.g. "Line 2: Women, 30–44". The
+ * card is a group of controls that only make sense together, so it needs a
+ * name of its own; the ordinal is what the "+ Add Line" button promises.
+ */
+function cardLabel(index, sel) {
+  const bracket = AGE_BRACKETS.find((b) => b.key === sel.ageBracket);
+  const ageLabel = bracket ? bracket.label : sel.ageBracket;
+  return `Line ${index + 1}: ${GENDERS[sel.gender] ?? sel.gender}, ${ageLabel}`;
+}
+
 function renderSelections() {
   const listEl = document.getElementById("selections-list");
   const addBtn = document.getElementById("add-selection");
 
   listEl.innerHTML = "";
 
-  for (const sel of selections) {
+  for (const [index, sel] of selections.entries()) {
     const card = document.createElement("div");
     card.className = "selection-card";
     card.style.setProperty("--card-color", sel.color);
+    card.setAttribute("role", "group");
+    card.setAttribute("aria-label", cardLabel(index, sel));
 
     // Controls row: gender + age dropdowns
     const controls = document.createElement("div");
     controls.className = "card-controls";
 
     const genderSelect = document.createElement("select");
+    genderSelect.id = `sel-${sel.id}-gender`;
+    genderSelect.name = `sel-${sel.id}-gender`;
     genderSelect.setAttribute("aria-label", "Gender");
     for (const [key, label] of Object.entries(GENDERS)) {
       const opt = document.createElement("option");
@@ -166,10 +181,13 @@ function renderSelections() {
     }
     genderSelect.addEventListener("change", () => {
       sel.gender = genderSelect.value;
+      card.setAttribute("aria-label", cardLabel(index, sel));
       scheduleRender();
     });
 
     const ageSelect = document.createElement("select");
+    ageSelect.id = `sel-${sel.id}-age`;
+    ageSelect.name = `sel-${sel.id}-age`;
     ageSelect.setAttribute("aria-label", "Age bracket");
     for (const bracket of AGE_BRACKETS) {
       const opt = document.createElement("option");
@@ -180,6 +198,7 @@ function renderSelections() {
     }
     ageSelect.addEventListener("change", () => {
       sel.ageBracket = ageSelect.value;
+      card.setAttribute("aria-label", cardLabel(index, sel));
       scheduleRender();
     });
 

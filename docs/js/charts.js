@@ -49,6 +49,19 @@ const ELECTION_LABEL_SHIFT_PX = -20;
 const underAxisPx = (isMobile) => (isMobile ? 52 : 44);
 
 /**
+ * Per-container state the legend-sync handler reads, refreshed on every render.
+ *
+ * The handler is bound once per chart div (Plotly.react keeps the node, so
+ * re-binding would stack generations), but everything it needs — the entries,
+ * the election markers, the current plot geometry — changes on resize. Keeping
+ * it here rather than in the handler's closure means a click after a resize
+ * still recomputes against the layout actually on screen.
+ *
+ * @type {WeakMap<HTMLElement, {entries: object[], base: object[], rebuild: Function}>}
+ */
+const endLabelSync = new WeakMap();
+
+/**
  * Vertical rules at every federal election, plus the year labels.
  *
  * The rules sit `layer: "below"` so the trend lines always cross in front of
@@ -153,19 +166,46 @@ function finalizeChart({ containerId, traces, dates, endLabelEntries, maxVal }) 
 
   const markers = buildElectionMarkers(isMobile);
   layout.shapes = markers.shapes;
-  layout.annotations = [...markers.annotations];
 
   // No right-hand gutter on mobile, so no end labels there — the legend carries it.
-  if (!isMobile && endLabelEntries.length) {
-    const laid = layoutEndLabels(endLabelEntries, {
-      plotHeightPx,
-      yMax: axisTop,
-      minGapPx: END_LABEL_GAP_PX,
-    });
-    layout.annotations.push(...buildEndLabelAnnotations(laid, { pxPerUnit }));
-  }
+  const endLabelsFor = (entries) =>
+    !isMobile && entries.length
+      ? buildEndLabelAnnotations(
+          layoutEndLabels(entries, {
+            plotHeightPx,
+            yMax: axisTop,
+            minGapPx: END_LABEL_GAP_PX,
+          }),
+          { pxPerUnit }
+        )
+      : [];
 
-  Plotly.react(containerId, traces, layout, plotlyConfig());
+  layout.annotations = [...markers.annotations, ...endLabelsFor(endLabelEntries)];
+
+  Plotly.react(containerId, traces, layout, plotlyConfig()).then((gd) => {
+    if (!gd) return;
+    endLabelSync.set(gd, {
+      // Index-aligned with `traces`: both are pushed in the same loop pass.
+      entries: endLabelEntries,
+      base: markers.annotations,
+      rebuild: endLabelsFor,
+    });
+
+    // Hiding a series from the legend must take its gutter label and leader
+    // with it, or the plot keeps labelling a line that is no longer drawn.
+    // relayout only writes annotations, so it emits plotly_relayout and can
+    // never re-enter this handler.
+    if (gd.dataset.endLabelSync) return;
+    gd.dataset.endLabelSync = "true";
+    gd.on("plotly_restyle", () => {
+      const state = endLabelSync.get(gd);
+      if (!state) return;
+      const visible = state.entries.filter(
+        (_, i) => gd.data?.[i]?.visible !== "legendonly"
+      );
+      Plotly.relayout(gd, { annotations: [...state.base, ...state.rebuild(visible)] });
+    });
+  });
 }
 
 /**

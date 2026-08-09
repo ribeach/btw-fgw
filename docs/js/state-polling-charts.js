@@ -153,6 +153,14 @@ export function renderMap(container, svgText, states, valueKey, tooltip) {
   svg.style.width = "100%";
   svg.style.height = "auto";
 
+  // position:fixed is only relative to the viewport while no ancestor carries a
+  // transform. The tooltip's markup sits inside the page's animated content, so
+  // it is reparented to <body> before it is ever shown — otherwise a tooltip
+  // opened during the entrance animation lands at the wrong coordinates.
+  if (tooltip && tooltip.parentNode !== document.body) {
+    document.body.appendChild(tooltip);
+  }
+
   // A group, not an image: role="img" would prune the per-state children and
   // with them every label a keyboard or screen-reader user can reach.
   container.setAttribute("role", "group");
@@ -177,6 +185,12 @@ export function renderMap(container, svgText, states, valueKey, tooltip) {
 
   for (const path of svg.querySelectorAll("path[id]")) {
     const state = stateById[path.id];
+    // Both maps inline the same file, so the "DE-XX" ids would be duplicated
+    // across the document. Nothing references them by id — the hatch overlay
+    // copies the `d` attribute rather than <use href="#…"> — so the id moves to
+    // a data attribute and the document keeps unique ids.
+    path.dataset.stateId = path.id;
+    path.removeAttribute("id");
     if (!state) continue;
 
     const value = state[valueKey];
@@ -425,6 +439,15 @@ export function renderSegment(el, summary) {
 let sortKey = "diff";
 let sortAsc = false;
 
+/**
+ * The live re-render callback for each table container, replaced on every
+ * renderTable call. The delegated sort listener is bound once but has to reach
+ * the current render, not the one that happened to be first.
+ *
+ * @type {WeakMap<HTMLElement, Function>}
+ */
+const tableRenderers = new WeakMap();
+
 const TABLE_CAPTION =
   "Left and right bloc shares for all 16 German states, with the current " +
   "left–right difference, the last state election result, and the change " +
@@ -478,13 +501,26 @@ export function renderTable(el, states, { footnoteEl = null, statusEl = null } =
     return (av ?? 0) - (bv ?? 0);
   }
 
-  /** A horizontally scrolled region is only a tab stop when it actually scrolls. */
+  /**
+   * A horizontally scrolled region is only a tab stop when it actually scrolls.
+   *
+   * The same pass drives the right-edge fade mask: `is-scrollable` says there
+   * is content past the edge, `is-at-end` says the reader has already reached
+   * it. Gating the mask on both keeps it from dimming the last column's final
+   * characters at desktop widths, where nothing is hidden in the first place.
+   */
   function updateScrollAffordance() {
-    if (el.scrollWidth > el.clientWidth + 1) {
+    const scrollable = el.scrollWidth > el.clientWidth + 1;
+    if (scrollable) {
       el.setAttribute("tabindex", "0");
     } else {
       el.removeAttribute("tabindex");
     }
+    el.classList.toggle("is-scrollable", scrollable);
+    el.classList.toggle(
+      "is-at-end",
+      !scrollable || el.scrollLeft + el.clientWidth >= el.scrollWidth - 1
+    );
   }
 
   function doRender(announce = false) {
@@ -543,6 +579,11 @@ export function renderTable(el, states, { footnoteEl = null, statusEl = null } =
     footnoteEl.hidden = !hasFallback;
   }
 
+  // The delegated listener below outlives this call, so it must not close over
+  // this call's doRender — a retry after a failed fetch renders a second time,
+  // and the first closure still holds the first (stale) `states`.
+  tableRenderers.set(el, doRender);
+
   // One delegated listener for the life of the page. Binding per <th> inside
   // doRender meant every sort added another generation of listeners.
   if (!el.dataset.sortBound) {
@@ -557,9 +598,10 @@ export function renderTable(el, states, { footnoteEl = null, statusEl = null } =
         sortKey = key;
         sortAsc = key === "name";
       }
-      doRender(true);
+      tableRenderers.get(el)?.(true);
     });
     window.addEventListener("resize", updateScrollAffordance);
+    el.addEventListener("scroll", updateScrollAffordance, { passive: true });
   }
 
   doRender();

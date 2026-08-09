@@ -194,17 +194,48 @@ export function buildEndLabelAnnotations(laid, { pxPerUnit }) {
 }
 
 /**
+ * Label for a series whose data stops before the right-hand edge of the plot.
+ *
+ * The gutter labels above are only honest for lines that actually reach the
+ * last x value; a demographics bracket that was last reported in 1969 would be
+ * read as a 2025 number if its label were pinned to the paper edge. This one is
+ * anchored to the series' real endpoint instead, sits inside the plot area (so
+ * it needs no gutter) and carries no leader — the point it names is 6px away.
+ *
+ * @param {{text: string, color: string, yValue: number, xValue: *}} entry
+ *   one end-label entry, including the x value its line ends at
+ * @returns {object} a Plotly annotation
+ */
+export function inlineEndLabel(entry) {
+  return {
+    xref: "x",
+    x: entry.xValue,
+    xanchor: "left",
+    xshift: 6,
+    y: entry.yValue,
+    yanchor: "middle",
+    text: entry.text,
+    showarrow: false,
+    font: { family: CHART_FONT, size: 11, weight: 700, color: entry.color },
+    align: "left",
+  };
+}
+
+/**
  * Right-hand plot margin wide enough for the longest end label.
  *
+ * The upper clamp has to clear the longest label any page actually produces —
+ * a demographics short label runs to ~24 characters, i.e. past 200px.
+ *
  * @param {{text: string}[]} entries
- * @returns {number} margin in pixels, between 90 and 200
+ * @returns {number} margin in pixels, between 90 and 240
  */
 export function measureRightMargin(entries) {
   const maxTextChars = entries.reduce(
     (longest, entry) => Math.max(longest, String(entry.text ?? "").length),
     0
   );
-  return Math.min(200, Math.max(90, 46 + maxTextChars * 6.9));
+  return Math.min(240, Math.max(90, 46 + maxTextChars * 6.9));
 }
 
 // --- Loading / error UX ----------------------------------------------------

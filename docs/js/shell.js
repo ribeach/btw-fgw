@@ -61,6 +61,11 @@ export function renderSpectrum(elBar, elReadout, { left, other, right, caption =
       (caption ? `. ${caption}` : "")
   );
 
+  // The readout is the bar's caption in print, not a second reading of it: the
+  // bar already carries the whole sentence in its aria-label, so announcing the
+  // text again would say everything twice.
+  elReadout.setAttribute("aria-hidden", "true");
+
   // textContent throughout: the caption may carry a data-derived date.
   elReadout.replaceChildren(
     document.createTextNode(shares.map((s) => `${s.label} ${fmt(s.value)}`).join(" · "))

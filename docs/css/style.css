@@ -36,7 +36,7 @@
   /* Bone — text */
   --bone: #F3F1EC;
   --bone-dim: #A2A9B8;
-  --bone-faint: #6B7488;
+  --bone-faint: #8A93A8;
   --danger: #F2777A;
 
   /* Bloc tints — text-safe lifts of the bloc hues, for readouts only */
@@ -267,8 +267,7 @@ figure {
 .stamp.success .spinner {
   display: none;
 }
-.stamp:empty,
-.status-box:empty {
+.stamp:empty {
   display: none;
 }
 
@@ -443,14 +442,18 @@ figure {
 }
 
 /* One orchestrated entrance: the page settles in a single short cascade.
-   fill-mode is `backwards` so no transform survives the animation — a lingering
-   transform on an ancestor would trap the fixed-position map tooltip. */
-.container > * {
+   The staggered items are the blocks inside <main> plus the footer that follows
+   it; <main> itself is a bare landmark wrapper and is deliberately left out, so
+   no transform ever lands on an ancestor of the fixed-position map tooltip.
+   fill-mode is `backwards` so no transform survives the animation either. */
+.container > #main > *,
+.container > .site-footer {
   animation: rise-in 480ms cubic-bezier(0.2, 0.6, 0.2, 1) backwards;
 }
-.container > *:nth-child(2) { animation-delay: 60ms; }
-.container > *:nth-child(3) { animation-delay: 120ms; }
-.container > *:nth-child(n+4) { animation-delay: 180ms; }
+.container > #main > *:nth-child(2) { animation-delay: 60ms; }
+.container > #main > *:nth-child(3) { animation-delay: 120ms; }
+.container > #main > *:nth-child(n+4),
+.container > .site-footer { animation-delay: 180ms; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
@@ -459,6 +462,7 @@ figure {
     transition-duration: 0.001ms !important;
   }
   .container > *,
+  .container > #main > *,
   .spectrum {
     animation: none !important;
     opacity: 1 !important;
@@ -873,10 +877,13 @@ figure {
   }
 }
 
-/* Raise the quiet greys when the reader has asked for more contrast. */
+/* Raise the quiet greys when the reader has asked for more contrast. The two
+   bone steps move together so the hierarchy survives — faint stays below dim,
+   both stay well clear of AA on every surface. */
 @media (prefers-contrast: more) {
   :root {
     --bone-dim: #CBD2DE;
+    --bone-faint: #A9B2C4;
     --rule: #3A465C;
   }
 }
@@ -1129,9 +1136,12 @@ figure {
 }
 /* Fade the right edge only: a left-hand fade would dissolve the sticky state
    column, which is the one thing that must stay legible while scrolling.
-   Dropped while focused — a mask clips the focus ring along with everything
+   Gated on the classes renderTable's updateScrollAffordance sets — the mask is
+   an affordance for hidden content, so it must not dim the last column at
+   widths where the table fits, or once the reader has scrolled to the end.
+   Dropped while focused too: a mask clips the focus ring along with everything
    else the element paints. */
-.state-polling #table-container:not(:focus-visible) {
+.state-polling #table-container.is-scrollable:not(.is-at-end):not(:focus-visible) {
   -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent 100%);
   mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent 100%);
 }
