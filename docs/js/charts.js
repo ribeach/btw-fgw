@@ -25,10 +25,12 @@ import {
   ensurePlotly,
 } from "./shared.js";
 
-// Election rules and their year labels are chrome, not data: bone at low alpha,
-// with the opacity folded into the colour so the shape needs no `opacity` of
-// its own (a shape-level opacity also fades the crosshair spike drawn over it).
-const MARKER_LINE_COLOR = "rgba(243, 241, 236, 0.14)";
+// Election rules and their year labels are chrome, not data: bone ink, dotted
+// so they read as event references and can never be mistaken for the solid
+// hairline grid. The opacity is folded into the colour so the shape needs no
+// `opacity` of its own (a shape-level opacity also fades the crosshair spike
+// drawn over it).
+const MARKER_LINE_COLOR = "rgba(243, 241, 236, 0.32)";
 const MARKER_LABEL_COLOR = "rgba(243, 241, 236, 0.55)";
 
 
@@ -77,7 +79,7 @@ function buildElectionMarkers(isMobile) {
     y0: 0,
     y1: 1,
     yref: "paper",
-    line: { color: MARKER_LINE_COLOR, width: 1 },
+    line: { color: MARKER_LINE_COLOR, width: 1, dash: "dot" },
   }));
 
   // Rules stay for every election; labels are desktop-only — at phone widths
