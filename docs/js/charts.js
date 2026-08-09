@@ -30,7 +30,8 @@ import {
 // so they read as event references and can never be mistaken for the solid
 // hairline grid. The opacity is folded into the colour so the shape needs no
 // `opacity` of its own (a shape-level opacity also fades the crosshair spike
-// drawn over it).
+// drawn over it). Keep this alpha below SPIKE_COLOR's (shared.js): the
+// interactive crosshair must always read above the static rules.
 const MARKER_LINE_COLOR = "rgba(243, 241, 236, 0.32)";
 const MARKER_LABEL_COLOR = "rgba(243, 241, 236, 0.55)";
 
@@ -332,34 +333,45 @@ function cell(tag, scope, text, className) {
 }
 
 /**
- * Official share for one table column at one election. Party columns are a
- * direct ELECTION_RESULTS lookup; bloc columns sum the parties that stood
- * (membership from PARTY_CONFIG.block, matching computeBlocks) with "other"
- * as the remainder to 100 so unlisted small parties are never dropped.
- * Returns null when the party did not stand that year.
+ * Official share for one table column at one election, or null when there is
+ * nothing official to show — the date has no ELECTION_RESULTS entry yet, or
+ * the party did not stand. Party columns are a direct ELECTION_RESULTS lookup
+ * at stored precision. Bloc columns sum their member parties (membership from
+ * PARTY_CONFIG.block, matching computeBlocks), each named bloc rounded to the
+ * table's one decimal — summing one-decimal components manufactures false
+ * precision (1990's left would print 40.95) — and "other" is the remainder to
+ * 100 of the ROUNDED named blocs, so unlisted small parties are never dropped
+ * and every bloc row sums to exactly 100.
  */
 function electionValue(key, dateStr) {
   const results = ELECTION_RESULTS[dateStr];
   if (!results) return null;
   if (key in BLOCKS) {
+    const round1 = (value) => Math.round(value * 10) / 10;
     const blocTotal = (block) =>
-      Object.entries(results).reduce(
-        (sum, [party, share]) => (PARTY_CONFIG[party]?.block === block ? sum + share : sum),
-        0
+      round1(
+        Object.entries(results).reduce(
+          (sum, [party, share]) => (PARTY_CONFIG[party]?.block === block ? sum + share : sum),
+          0
+        )
       );
-    if (key === "other") return 100 - blocTotal("left") - blocTotal("right");
+    const named = Object.keys(BLOCKS).filter((block) => block !== "other");
+    if (key === "other") return round1(named.reduce((rest, block) => rest - blocTotal(block), 100));
     return blocTotal(key);
   }
   return Number.isFinite(results[key]) ? results[key] : null;
 }
 
 /**
- * One decimal by default, two when the stored value genuinely carries them:
+ * Table number formatting. Non-finite (party did not stand, or no official
+ * result for the date) → em dash. Exact values keep a genuine second decimal:
  * BSW's 4.98% in 2025 must not round up to a "5.0" that would imply the
- * five-percent threshold was reached. Null (party did not stand) → em dash.
+ * five-percent threshold was reached. Pass `exact = false` for smoothed poll
+ * readings, which stay at the one decimal the rest of the page uses.
  */
-function formatShare(value) {
+function formatShare(value, exact = true) {
   if (!Number.isFinite(value)) return "—";
+  if (!exact) return value.toFixed(1);
   return Math.round(value * 100) % 10 === 0 ? value.toFixed(1) : value.toFixed(2);
 }
 
@@ -371,8 +383,10 @@ function formatShare(value) {
  *
  * @param {HTMLTableElement|null} table
  * @param {{dates: Date[], series: object[]}} chart  a render function's return value
+ * @param {string} captionText  visually-hidden caption; per-table, because the
+ *   parties and blocs tables derive their election rows differently
  */
-export function renderChartTable(table, { dates, series } = {}) {
+export function renderChartTable(table, { dates, series } = {}, captionText) {
   if (!table || !Array.isArray(dates) || !dates.length || !series || !series.length) return;
 
   const rows = [];
@@ -381,17 +395,15 @@ export function renderChartTable(table, { dates, series } = {}) {
     if (index < 0) continue;
     rows.push({ label: `${dateStr.slice(0, 4)} election`, index, dateStr });
   }
+  // The latest smoothed reading always gets its own row — even when the series
+  // ends on (or before) an election day, the official result and the poll
+  // average are different numbers and both belong in the table.
   const latestIndex = dates.length - 1;
-  if (!rows.length || rows[rows.length - 1].index !== latestIndex) {
-    rows.push({ label: `Latest · ${shortDate(dates[latestIndex])}`, index: latestIndex });
-  }
+  rows.push({ label: `Latest · ${shortDate(dates[latestIndex])}`, index: latestIndex });
 
   const caption = document.createElement("caption");
   caption.className = "visually-hidden";
-  caption.textContent =
-    "Official second-vote result in percent at each federal election (Bundeswahlleiterin); " +
-    "the latest row is the smoothed polling average (30-day exponentially weighted). " +
-    "An em dash marks a party that did not stand.";
+  caption.textContent = captionText || "";
 
   const headRow = document.createElement("tr");
   headRow.appendChild(cell("th", "col", "Reading"));
@@ -405,13 +417,10 @@ export function renderChartTable(table, { dates, series } = {}) {
     tr.appendChild(cell("th", "row", row.label));
     for (const s of series) {
       // Election rows show the stored official result (two decimals preserved
-      // where significant); the latest row is a smoothed poll estimate and
-      // stays at the one decimal the rest of the page uses.
+      // where significant); the latest row is a smoothed poll estimate.
       const text = row.dateStr
         ? formatShare(electionValue(s.key, row.dateStr))
-        : Number.isFinite(s.values[row.index])
-          ? s.values[row.index].toFixed(1)
-          : "—";
+        : formatShare(s.values[row.index], false);
       tr.appendChild(cell("td", null, text, "tnum"));
     }
     tbody.appendChild(tr);

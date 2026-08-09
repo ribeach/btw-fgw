@@ -61,9 +61,15 @@ export const ELECTION_DATES = [
 // column can display are listed — the blocs' "other" is a remainder, so
 // unlisted small parties are never dropped, and an absent key renders as an
 // em dash ("did not stand"). `cdu` is CDU/CSU combined, computed from the
-// official absolute vote counts, so in 1994, 2017 and 2025 it differs by 0.1
-// from the sum of the two rounded component shares — that is correct, not a
-// typo. `linke` is the PDS / Die Linke lineage.
+// official absolute vote counts, so in 1994, 2017, 2021 and 2025 it differs by
+// 0.1 from the sum of the two rounded component shares — that is correct, not
+// a typo (2021 joined that list only with the re-determined counts: 24.14%
+// combined, against rounded components 19.0 + 5.2 = 24.2). `linke` is the
+// PDS / Die Linke lineage. The demographics page derives from the as-published
+// RWS CSV (docs/data/demographics.json, which must never be edited to match),
+// so small deltas against that page — 2021 (originally published there vs
+// re-determined here) and 2025 (component-sum there vs combined-count here) —
+// are expected and correct.
 export const ELECTION_RESULTS = {
   "1980-10-05": { cdu: 44.5, spd: 42.9, gruene: 1.5, fdp: 10.6 },
   "1983-03-06": { cdu: 48.8, spd: 38.2, gruene: 5.6, fdp: 7.0 },
@@ -88,6 +94,32 @@ export const ELECTION_RESULTS = {
   // under the five-percent threshold, so it must never render rounded to 5.0.
   "2025-02-23": { cdu: 28.5, spd: 16.4, gruene: 11.6, fdp: 4.3, linke: 8.8, afd: 20.8, bsw: 4.98 },
 };
+
+// Module-load lockstep check for the two tables above. Dev guard only — warn,
+// never throw: on election night a new ELECTION_DATES entry may land before
+// its official result exists, and the page must still render (that table row
+// shows em dashes until the results are added).
+{
+  const knownDates = new Set(ELECTION_DATES);
+  for (const dateStr of Object.keys(ELECTION_RESULTS)) {
+    if (!knownDates.has(dateStr)) {
+      console.warn(`config.js: ELECTION_RESULTS["${dateStr}"] has no matching ELECTION_DATES entry.`);
+    }
+  }
+  for (const dateStr of ELECTION_DATES) {
+    if (!(dateStr in ELECTION_RESULTS)) {
+      console.warn(
+        `config.js: no ELECTION_RESULTS entry for election "${dateStr}" — its table row will render em dashes.`
+      );
+    }
+  }
+  if (ELECTION_RESULTS["2025-02-23"]?.bsw >= 5) {
+    console.warn(
+      "config.js: ELECTION_RESULTS 2025 bsw must stay below 5 — the official share is 4.981, " +
+        "under the five-percent threshold, and must never render as 5.0."
+    );
+  }
+}
 
 // EWMA halflife in days: a poll from 30 days ago gets half the weight of today's
 export const SMOOTHING_HALFLIFE_DAYS = 30;

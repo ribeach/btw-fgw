@@ -55,8 +55,21 @@ async function init() {
 
     // The tables are viewport-independent, so they are built once and left alone
     // by the resize path.
-    renderChartTable(document.getElementById("blocks-data-table"), rendered.blocks);
-    renderChartTable(document.getElementById("parties-data-table"), rendered.parties);
+    renderChartTable(
+      document.getElementById("blocks-data-table"),
+      rendered.blocks,
+      "Bloc shares in percent. Election rows are bloc sums derived from the official " +
+        "second-vote results (Bundeswahlleiterin), rounded to one decimal; the latest row " +
+        "is the smoothed polling average (30-day exponentially weighted)."
+    );
+    renderChartTable(
+      document.getElementById("parties-data-table"),
+      rendered.parties,
+      "Party shares in percent. Election rows are the official second-vote results " +
+        "(Bundeswahlleiterin); the latest row is the smoothed polling average (30-day " +
+        "exponentially weighted). An em dash marks a party that did not stand or a result " +
+        "that is not available."
+    );
 
     if (!resizeBound) {
       resizeBound = true;

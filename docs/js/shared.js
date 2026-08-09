@@ -22,8 +22,10 @@ const BONE_DIM = token("--bone-dim", "#A2A9B8");
 const SURFACE = token("--surface", "#121826");
 const RULE = token("--rule", "#232B3B");
 
-/** The crosshair that tracks the cursor across a chart. */
-const SPIKE_COLOR = "rgba(243, 241, 236, 0.28)";
+// The crosshair that tracks the cursor across a chart. Interactive chrome
+// outranks static chrome: keep this alpha above the election-rule markers
+// (0.32 in charts.js) so the spike always reads over them on hover.
+const SPIKE_COLOR = "rgba(243, 241, 236, 0.45)";
 
 /**
  * Common Plotly layout theme shared by the federal and demographics charts.
