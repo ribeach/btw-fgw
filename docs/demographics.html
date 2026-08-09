@@ -1,46 +1,91 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="German Federal Election results by gender and age group — historical demographic voting patterns since 1953">
-  <title>Election Demographics — German Federal Elections</title>
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='5.33' fill='%23000'/%3E%3Crect y='5.33' width='16' height='5.33' fill='%23D00'/%3E%3Crect y='10.67' width='16' height='5.33' fill='%23FFCE00'/%3E%3C/svg%3E">
+  <title>Election Demographics — Sonntagsfrage</title>
+  <meta name="description" content="German federal election results by gender and age group — representative voting statistics since 1953.">
+  <meta name="theme-color" content="#080B11">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <meta property="og:site_name" content="Sonntagsfrage">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Election Demographics">
+  <meta property="og:description" content="German federal election results by gender and age group — representative voting statistics since 1953.">
+  <meta name="twitter:card" content="summary">
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="fonts/fira-sans-condensed-700.woff2">
   <link rel="stylesheet" href="css/style.css">
   <script src="js/vendor/plotly.min.js"></script>
 </head>
 <body class="demographics">
-  <div class="container">
-    <header>
-      <h1>Election Demographics</h1>
-      <p>Voting patterns by gender and age — Data from <a href="https://www.bundeswahlleiterin.de/bundestagswahlen/2025/publikationen.html" target="_blank" rel="noopener">Bundeswahlleiterin Heft 4</a></p>
-      <nav class="page-nav">
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <div class="site-header__inner">
+      <a class="wordmark" href="index.html">Sonntagsfrage</a>
+      <span class="wordmark-tag">German polling, plotted</span>
+      <nav class="site-nav" aria-label="Primary">
         <a href="index.html">Polling Trends</a>
         <a href="demographics.html" aria-current="page">Demographics</a>
         <a href="state-polling.html">State Polling</a>
       </nav>
-    </header>
-
-    <div id="status" class="status-box" role="status" aria-live="polite">
-      <div class="spinner"></div> <span>Loading&hellip;</span>
+      <div id="status" class="stamp" role="status" aria-live="polite">
+        <span class="spinner"></span> <span>Loading…</span>
+      </div>
     </div>
+    <div class="spectrum" id="spectrum" hidden></div>
+    <p class="spectrum-readout" id="spectrum-readout" hidden></p>
+  </header>
+
+  <div class="container">
+    <div class="page-head">
+      <p class="eyebrow"><span lang="de">Bundeswahlleiterin</span> · <span lang="de">Repräsentative Wahlstatistik</span></p>
+      <h1 class="page-title">Election Demographics</h1>
+      <p class="page-standfirst">How men and women in each age bracket cast their second vote, every federal election since 1953. Build up to five lines and compare them directly.</p>
+    </div>
+
     <div id="error" role="alert"></div>
 
-    <main>
-      <figure class="chart-container" role="img" aria-label="Liniendiagramm: Zweitstimmenanteile nach Geschlecht, Altersgruppe und Partei seit 1953">
-        <div id="demographics-chart"></div>
+    <main id="main" tabindex="-1">
+      <figure class="chart-container" aria-describedby="demographics-data">
+        <figcaption class="panel-head">
+          <p class="eyebrow">Bundeswahlleiterin · Heft 4</p>
+          <h2 class="panel-title">Voting patterns by gender &amp; age</h2>
+          <p class="panel-note">1953–2025</p>
+        </figcaption>
+        <div id="demographics-chart" role="img" aria-label="Line chart: second-vote share by gender, age group and party at every federal election since 1953"></div>
+        <p class="chart-footnote">A break in a line means the Bundeswahlleiterin did not report that age bracket in that election year — missing data, not zero.</p>
+        <details class="chart-data" id="demographics-data">
+          <summary>View the numbers</summary>
+          <div class="chart-data__scroll">
+            <div id="demographics-table-wrap"></div>
+          </div>
+        </details>
       </figure>
+
+      <section class="selections-panel">
+        <h2 class="panel-title">Configure lines</h2>
+        <div id="selections-list"></div>
+        <button id="add-selection" class="btn-add">+ Add Line</button>
+      </section>
     </main>
 
-    <section class="selections-panel">
-      <h2>Configure Lines</h2>
-      <div id="selections-list"></div>
-      <button id="add-selection" class="btn-add">+ Add Line</button>
-    </section>
-
-    <footer>
-      Data source: <a href="https://www.bundeswahlleiterin.de/bundestagswahlen/2025/publikationen.html" target="_blank" rel="noopener">Bundeswahlleiterin, Heft 4 (BTW 2025)</a> (© Die Bundeswahlleiterin / Destatis — <a href="https://www.govdata.de/dl-de/by-2-0" target="_blank" rel="noopener">dl-de/by-2-0</a>)
-      <br>Representative election statistics — Zweitstimmen by gender and age group.
+    <footer class="site-footer">
+      <div class="footer-col">
+        <p class="eyebrow">Data</p>
+        <p><a href="https://www.bundeswahlleiterin.de/bundestagswahlen/2025/publikationen.html" target="_blank" rel="noopener"><span lang="de">Bundeswahlleiterin, Heft 4</span> (BTW 2025)</a> (© <span lang="de">Die Bundeswahlleiterin</span> / Destatis — <a href="https://www.govdata.de/dl-de/by-2-0" target="_blank" rel="noopener">dl-de/by-2-0</a>)</p>
+        <p>Extracted from the labelled CSV of <span lang="de">Übersicht 9, „Zweitstimmen nach Geschlecht und Altersgruppen seit 1953“</span>.</p>
+      </div>
+      <div class="footer-col">
+        <p class="eyebrow">Method</p>
+        <p>Representative election statistics — <span lang="de">Zweitstimmen</span> by gender and age group, as published for each election.</p>
+        <p>Union combines CDU and CSU. Age brackets change between elections, so a missing bracket leaves a gap in the line rather than a zero.</p>
+      </div>
+      <div class="footer-col">
+        <p class="eyebrow">Code</p>
+        <p><a href="https://github.com/ribeach/btw-fgw" target="_blank" rel="noopener">github.com/ribeach/btw-fgw</a></p>
+        <p>Fira Sans Condensed — SIL OFL 1.1</p>
+        <p>Updated automatically via GitHub Actions</p>
+      </div>
     </footer>
   </div>
 

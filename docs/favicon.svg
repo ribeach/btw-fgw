@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" role="img" aria-label="Sonntagsfrage">
+  <rect width="16" height="16" rx="2" fill="#080B11"/>
+  <rect x="2" y="3" width="4.44" height="10" fill="#D92121"/>
+  <rect x="6.44" y="3" width="1.44" height="10" fill="#3A4356"/>
+  <rect x="7.88" y="3" width="6.12" height="10" fill="#004B87"/>
+</svg>

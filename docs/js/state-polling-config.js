@@ -1,5 +1,7 @@
 // State polling page configuration
 
+import { BLOC_COLORS } from "./config.js";
+
 // English display names for the 16 Bundesländer, keyed by the "DE-XX" ids used
 // in docs/data/state-polling.json and in the map SVG's path ids. The German
 // `name` in that JSON comes from scripts/state_election_results.json and is
@@ -33,16 +35,23 @@ export function stateName(id, fallback = "") {
   return STATE_NAMES[id] ?? fallback ?? "";
 }
 
-// Color scale range in percentage points
-export const COLOR_SCALE_MAX = 45;
+// Diverging map scale. The endpoints are the site-wide bloc colours, so red
+// means the left bloc (SPD + Grüne + Linke) and blue the right bloc
+// (CDU/CSU + AfD) on every page — the maps used to run the other way round,
+// which read as an inverted result to anyone arriving from the federal charts.
+export const COLOR_LEFT = BLOC_COLORS.left;
+export const COLOR_RIGHT = BLOC_COLORS.right;
+export const COLOR_NEUTRAL = BLOC_COLORS.neutral;
+
+// Scale range in percentage points, per map. The two maps measure different
+// quantities — a raw left−right gap runs far wider than a shift since the last
+// election — so they get their own domains and their own legends rather than
+// sharing one scale that would flatten the change map to near-neutral.
+export const COLOR_SCALE_MAX_DIFF = 45;
+export const COLOR_SCALE_MAX_CHANGE = 25;
 
 // Power exponent for color scale (0.5 = sqrt gives more contrast to smaller values; 1 = linear)
 export const COLOR_SCALE_POWER = 0.5;
-
-// Diverging color scale: negative diff → red (right leads), positive → blue (left leads)
-export const COLOR_RIGHT = "#b91c1c"; // red-700
-export const COLOR_NEUTRAL = "#475569"; // slate-600
-export const COLOR_LEFT = "#1d4ed8";  // blue-700
 
 // West/East classification (matches fetch_state_data.py)
 export const WEST_STATES = new Set([

@@ -3,30 +3,51 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Left–right difference (SPD+Grüne+Linke vs CDU/CSU+AfD) across the German states — current polling from dawum.de">
-  <title>State Polling — Left vs. Right</title>
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='5.33' fill='%23000'/%3E%3Crect y='5.33' width='16' height='5.33' fill='%23D00'/%3E%3Crect y='10.67' width='16' height='5.33' fill='%23FFCE00'/%3E%3C/svg%3E">
+  <title>German States: Left vs. Right — Sonntagsfrage</title>
+  <meta name="description" content="Left–right difference (SPD + Grüne + Linke versus CDU/CSU + AfD) across the 16 German states, from current dawum.de polling.">
+  <meta name="theme-color" content="#080B11">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <meta property="og:site_name" content="Sonntagsfrage">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="German States: Left vs. Right">
+  <meta property="og:description" content="Left–right difference (SPD + Grüne + Linke versus CDU/CSU + AfD) across the 16 German states, from current dawum.de polling.">
+  <meta name="twitter:card" content="summary">
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="fonts/fira-sans-condensed-700.woff2">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body class="state-polling">
-  <div class="container">
-    <header>
-      <h1>German States: Left vs. Right</h1>
-      <p>Difference (SPD+Grüne+Linke) − (CDU/CSU+AfD) by state — data from <a href="https://dawum.de" target="_blank" rel="noopener">dawum.de</a></p>
-      <nav class="page-nav">
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <div class="site-header__inner">
+      <a class="wordmark" href="index.html">Sonntagsfrage</a>
+      <span class="wordmark-tag">German polling, plotted</span>
+      <nav class="site-nav" aria-label="Primary">
         <a href="index.html">Polling Trends</a>
         <a href="demographics.html">Demographics</a>
         <a href="state-polling.html" aria-current="page">State Polling</a>
       </nav>
-    </header>
-
-    <div id="status" class="status-box" role="status" aria-live="polite">
-      <div class="spinner"></div> <span>Loading…</span>
+      <div id="status" class="stamp" role="status" aria-live="polite">
+        <span class="spinner"></span> <span>Loading…</span>
+      </div>
     </div>
+    <div class="spectrum" id="spectrum" hidden></div>
+    <p class="spectrum-readout" id="spectrum-readout" hidden></p>
+  </header>
+
+  <div class="container">
+    <div class="page-head">
+      <p class="eyebrow">dawum.de · State polling aggregate</p>
+      <h1 class="page-title">German States: Left vs. Right</h1>
+      <p class="page-standfirst">The gap between the left bloc (SPD + Grüne + Die Linke) and the right bloc (CDU/CSU + AfD) in each Bundesland, aggregated from recent state polls and compared with the last state election.</p>
+    </div>
+
     <div id="error" role="alert"></div>
 
-    <main>
+    <main id="main" tabindex="-1">
       <div id="segment-bar" class="segment-bar chart-container"></div>
+
+      <a class="skip-link" href="#table-container">Skip maps, go to the data table</a>
 
       <div class="maps-section chart-container">
         <div class="maps-grid">
@@ -41,25 +62,38 @@
             <div id="map-change" class="map-container"></div>
           </div>
         </div>
-        <div class="map-legend">
-          <span class="legend-item legend-right">Right leads</span>
-          <span class="legend-scale"></span>
-          <span class="legend-item legend-left">Left leads</span>
-        </div>
+        <p class="maps-key">Red = SPD/Grüne/Linke · Blue = CDU/CSU/AfD</p>
       </div>
 
       <div id="map-tooltip" class="map-tooltip" style="display:none;"></div>
 
       <div class="chart-container">
-        <div id="table-container"></div>
+        <h2 class="visually-hidden">All states, sortable</h2>
+        <div id="table-container" role="region" aria-label="All states, sortable data table"></div>
+        <p id="table-footnote" class="table-footnote" hidden></p>
+        <p id="table-sort-status" class="visually-hidden" role="status" aria-live="polite"></p>
       </div>
     </main>
 
-    <footer>
-      Updated automatically via GitHub Actions •
-      Polling data: <a href="https://dawum.de" target="_blank" rel="noopener">dawum.de</a> (<a href="https://opendatacommons.org/licenses/odbl/1.0/" target="_blank" rel="noopener">ODC-ODbL</a>) •
-      Population data: <a href="https://www.destatis.de" target="_blank" rel="noopener">Destatis</a> (<a href="https://www.govdata.de/dl-de/by-2-0" target="_blank" rel="noopener">dl-de/by-2-0</a>) •
-      State boundaries: <a href="https://github.com/isellsoap/deutschlandGeoJSON" target="_blank" rel="noopener">isellsoap/deutschlandGeoJSON</a> (MIT)
+    <footer class="site-footer">
+      <div class="footer-col">
+        <p class="eyebrow">Data</p>
+        <p>Polling: <a href="https://dawum.de" target="_blank" rel="noopener">dawum.de</a> (<a href="https://opendatacommons.org/licenses/odbl/1.0/" target="_blank" rel="noopener">ODC-ODbL</a>)</p>
+        <p>Population: <a href="https://www.destatis.de" target="_blank" rel="noopener">Destatis</a> (<a href="https://www.govdata.de/dl-de/by-2-0" target="_blank" rel="noopener">dl-de/by-2-0</a>)</p>
+        <p>State boundaries: <a href="https://github.com/isellsoap/deutschlandGeoJSON" target="_blank" rel="noopener">isellsoap/deutschlandGeoJSON</a> (MIT)</p>
+      </div>
+      <div class="footer-col">
+        <p class="eyebrow">Method</p>
+        <p>Left is SPD + Grüne + Die Linke. Right is CDU/CSU + AfD.</p>
+        <p>Each state averages its recent surveys, weighted by sample size and decaying by half every 30 days. States with no current survey fall back to their last state election result.</p>
+        <p>The national summary weights the 16 states by population, not by survey count.</p>
+      </div>
+      <div class="footer-col">
+        <p class="eyebrow">Code</p>
+        <p><a href="https://github.com/ribeach/btw-fgw" target="_blank" rel="noopener">github.com/ribeach/btw-fgw</a></p>
+        <p>Fira Sans Condensed — SIL OFL 1.1</p>
+        <p>Updated automatically via GitHub Actions</p>
+      </div>
     </footer>
   </div>
 
