@@ -1,23 +1,37 @@
 // State polling page configuration
 
+// English display names for the 16 Bundesländer, keyed by the "DE-XX" ids used
+// in docs/data/state-polling.json and in the map SVG's path ids. The German
+// `name` in that JSON comes from scripts/state_election_results.json and is
+// copied through by the daily pipeline; those stay German to match the official
+// election records, and display language is handled here instead.
+// Names with no established English exonym are kept as-is.
 export const STATE_NAMES = {
   "DE-BW": "Baden-Württemberg",
-  "DE-BY": "Bayern",
+  "DE-BY": "Bavaria",
   "DE-BE": "Berlin",
   "DE-BB": "Brandenburg",
   "DE-HB": "Bremen",
   "DE-HH": "Hamburg",
-  "DE-HE": "Hessen",
+  "DE-HE": "Hesse",
   "DE-MV": "Mecklenburg-Vorpommern",
-  "DE-NI": "Niedersachsen",
-  "DE-NW": "Nordrhein-Westfalen",
-  "DE-RP": "Rheinland-Pfalz",
+  "DE-NI": "Lower Saxony",
+  "DE-NW": "North Rhine-Westphalia",
+  "DE-RP": "Rhineland-Palatinate",
   "DE-SL": "Saarland",
-  "DE-SN": "Sachsen",
-  "DE-ST": "Sachsen-Anhalt",
+  "DE-SN": "Saxony",
+  "DE-ST": "Saxony-Anhalt",
   "DE-SH": "Schleswig-Holstein",
-  "DE-TH": "Thüringen",
+  "DE-TH": "Thuringia",
 };
+
+/**
+ * English display name for a state id, falling back to the name shipped in the
+ * data (German) if an unknown id ever shows up.
+ */
+export function stateName(id, fallback = "") {
+  return STATE_NAMES[id] ?? fallback ?? "";
+}
 
 // Color scale range in percentage points
 export const COLOR_SCALE_MAX = 45;

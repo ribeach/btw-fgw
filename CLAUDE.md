@@ -219,6 +219,8 @@ Behavior:
 - Uses direct DOM/SVG manipulation rather than Plotly for the maps
 - Colors are derived from a diverging scale centered at `0`, with config in `state-polling-config.js`
 
+All three pages are in English. The state page's UI copy is English while German party names (`SPD`, `Grüne`, `Die Linke`, `AfD`, `CDU/CSU`) stay as-is, matching `docs/js/config.js`. Bundesland names are anglicized in the frontend only: `STATE_NAMES` in `state-polling-config.js` maps each `DE-XX` id to its English display name (`DE-BY` → `Bavaria`), and `stateName(id, fallback)` is the single accessor used by the table, tooltips, SVG `<title>`s, and summary cards. This mapping deliberately lives in the frontend and not in the pipeline. The German `name` in `docs/data/state-polling.json` originates in the committed, hand-maintained `scripts/state_election_results.json` and is copied through by `scripts/fetch_state_data.py` (dawum only supplies a `Shortcut` abbreviation as a fallback that never fires in practice). Those names stay German so they keep matching the official election records they were transcribed from; display language is a frontend concern. `stateName` falls back to the JSON's German `name` for an unknown id. Dates use the `en-GB` locale and name sorting uses `localeCompare(..., "en")` on the English display name, so the visible A–Z order matches what is rendered.
+
 ## Dependencies
 
 `requirements.txt` is fully pinned (`==`) and contains:

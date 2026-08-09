@@ -1,4 +1,4 @@
-import { COLOR_RIGHT, COLOR_NEUTRAL, COLOR_LEFT, COLOR_SCALE_MAX, COLOR_SCALE_POWER, WEST_STATES, EAST_STATES } from "./state-polling-config.js";
+import { COLOR_RIGHT, COLOR_NEUTRAL, COLOR_LEFT, COLOR_SCALE_MAX, COLOR_SCALE_POWER, WEST_STATES, EAST_STATES, stateName } from "./state-polling-config.js";
 
 /**
  * Interpolate between two hex colors.
@@ -44,7 +44,7 @@ function formatDate(dateStr) {
   if (Number.isNaN(date.getTime())) {
     return escapeHtml(dateStr);
   }
-  return date.toLocaleDateString("de-DE", { day: "numeric", month: "short", year: "numeric" });
+  return date.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 }
 
 function formatYear(dateStr) {
@@ -91,8 +91,8 @@ export function renderMap(container, svgText, states, valueKey, tooltip) {
   container.setAttribute("role", "img");
   container.setAttribute("aria-label",
     valueKey === "change"
-      ? "Karte: Veränderung der Links-Rechts-Differenz zur letzten Landtagswahl, je Bundesland"
-      : "Karte: aktuelle Links-Rechts-Differenz in Prozentpunkten, je Bundesland");
+      ? "Map: change in the left–right difference since the last state election, by state"
+      : "Map: current left–right difference in percentage points, by state");
 
   const stateById = Object.fromEntries(states.map((s) => [s.id, s]));
 
@@ -135,42 +135,43 @@ export function renderMap(container, svgText, states, valueKey, tooltip) {
  */
 function buildMapPathTitle(state, valueKey) {
   const value = state[valueKey];
+  const label = stateName(state.id, state.name);
   if (!Number.isFinite(value)) {
-    return `${state.name}: Keine Daten`;
+    return `${label}: no data`;
   }
   const valueStr = formatDiff(value);
   if (valueKey === "change") {
-    const changeDir = value >= 0 ? "nach links" : "nach rechts";
-    return `${state.name}: Veränderung ${changeDir} ${valueStr}`;
+    const changeDir = value >= 0 ? "to the left" : "to the right";
+    return `${label}: shift ${changeDir} ${valueStr}`;
   }
-  const direction = value >= 0 ? "Links führt" : "Rechts führt";
-  return `${state.name}: ${direction} ${valueStr}`;
+  const direction = value >= 0 ? "Left leads" : "Right leads";
+  return `${label}: ${direction} ${valueStr}`;
 }
 
 function buildTooltip(state, valueKey) {
   const isChange = valueKey === "change";
   const value = state[valueKey];
   const valueStr = formatDiff(value);
-  const direction = Number.isFinite(value) ? (value >= 0 ? "Links führt" : "Rechts führt") : "Keine Daten";
-  const changeDir = Number.isFinite(value) ? (value >= 0 ? "nach links" : "nach rechts") : "Keine Daten";
-  const stateName = escapeHtml(state.name);
+  const direction = Number.isFinite(value) ? (value >= 0 ? "Left leads" : "Right leads") : "No data";
+  const changeDir = Number.isFinite(value) ? (value >= 0 ? "To the left" : "To the right") : "No data";
+  const label = escapeHtml(stateName(state.id, state.name));
 
   if (isChange) {
     return `
-      <div class="tooltip-title">${stateName}</div>
-      <div class="tooltip-row"><span>Veränderung:</span><span class="${diffClass(value)}">${valueStr}</span></div>
-      <div class="tooltip-row"><span>Richtung:</span><span>${changeDir}</span></div>
-      <div class="tooltip-row"><span>Aktuell:</span><span>${formatDiff(state.diff)}</span></div>
-      <div class="tooltip-row"><span>Landtagswahl ${formatYear(state.election?.date)}:</span><span>${formatDiff(state.election?.diff)}</span></div>
+      <div class="tooltip-title">${label}</div>
+      <div class="tooltip-row"><span>Change:</span><span class="${diffClass(value)}">${valueStr}</span></div>
+      <div class="tooltip-row"><span>Direction:</span><span>${changeDir}</span></div>
+      <div class="tooltip-row"><span>Current:</span><span>${formatDiff(state.diff)}</span></div>
+      <div class="tooltip-row"><span>State election ${formatYear(state.election?.date)}:</span><span>${formatDiff(state.election?.diff)}</span></div>
     `;
   } else {
     return `
-      <div class="tooltip-title">${stateName}</div>
-      <div class="tooltip-row"><span>Links–Rechts:</span><span class="${diffClass(value)}">${valueStr}</span></div>
+      <div class="tooltip-title">${label}</div>
+      <div class="tooltip-row"><span>Left–Right:</span><span class="${diffClass(value)}">${valueStr}</span></div>
       <div class="tooltip-row"><span>${direction}</span></div>
-      <div class="tooltip-row"><span>Links (SPD+Grüne+Linke):</span><span>${formatPercent(state.left)}</span></div>
-      <div class="tooltip-row"><span>Rechts (CDU/CSU+AfD):</span><span>${formatPercent(state.right)}</span></div>
-      <div class="tooltip-row"><span>Umfrage vom:</span><span>${formatDate(state.poll_date)}</span></div>
+      <div class="tooltip-row"><span>Left (SPD+Grüne+Linke):</span><span>${formatPercent(state.left)}</span></div>
+      <div class="tooltip-row"><span>Right (CDU/CSU+AfD):</span><span>${formatPercent(state.right)}</span></div>
+      <div class="tooltip-row"><span>Polled:</span><span>${formatDate(state.poll_date)}</span></div>
     `;
   }
 }
@@ -189,27 +190,29 @@ function stateAbbrevs(set) {
  * Render the summary segment bar.
  */
 export function renderSegment(el, summary) {
+  const maxName = escapeHtml(stateName(summary.max_state, summary.max_state_name));
+  const minName = escapeHtml(stateName(summary.min_state, summary.min_state_name));
   const cards = [
     {
-      label: "Ø Alle Bundesländer",
+      label: "Ø All states",
       value: summary.avg_diff,
-      sub: "Gewichteter Schnitt",
+      sub: "Population-weighted average",
     },
     {
-      label: "Westdeutschland",
+      label: "West Germany",
       value: summary.west_avg,
       sub: stateAbbrevs(WEST_STATES),
     },
     {
-      label: "Ostdeutschland",
+      label: "East Germany",
       value: summary.east_avg,
       sub: stateAbbrevs(EAST_STATES),
     },
     {
-      label: "Spannweite",
+      label: "Range",
       value: null,
-      sub: `${escapeHtml(summary.max_state_name)}: ${formatDiff(summary.max_diff)} — ${escapeHtml(summary.min_state_name)}: ${formatDiff(summary.min_diff)}`,
-      valueHtml: `<span class="pos">${formatDiff(summary.max_diff)}</span> bis <span class="neg">${formatDiff(summary.min_diff)}</span>`,
+      sub: `${maxName}: ${formatDiff(summary.max_diff)} — ${minName}: ${formatDiff(summary.min_diff)}`,
+      valueHtml: `<span class="pos">${formatDiff(summary.max_diff)}</span> to <span class="neg">${formatDiff(summary.min_diff)}</span>`,
     },
   ];
 
@@ -232,17 +235,18 @@ let sortAsc = false;
  */
 export function renderTable(el, states) {
   const columns = [
-    { key: "name", label: "Bundesland", fmt: (s) => escapeHtml(s.name) },
-    { key: "left", label: "Links %", fmt: (s) => formatPercent(s.left) },
-    { key: "right", label: "Rechts %", fmt: (s) => formatPercent(s.right) },
-    { key: "diff", label: "Differenz", fmt: (s) => `<span class="${diffClass(s.diff)}">${formatDiff(s.diff)}</span>` },
-    { key: "election_diff", label: `Landtagswahl`, fmt: (s) => `<span class="${diffClass(s.election?.diff)}">${formatDiff(s.election?.diff)}</span>` },
-    { key: "change", label: "Veränderung", fmt: (s) => `<span class="${diffClass(s.change)}">${formatDiff(s.change)}</span>` },
-    { key: "poll_date", label: "Umfrage vom", fmt: (s) => formatDate(s.poll_date) },
+    { key: "name", label: "State", fmt: (s) => escapeHtml(stateName(s.id, s.name)) },
+    { key: "left", label: "Left %", fmt: (s) => formatPercent(s.left) },
+    { key: "right", label: "Right %", fmt: (s) => formatPercent(s.right) },
+    { key: "diff", label: "Difference", fmt: (s) => `<span class="${diffClass(s.diff)}">${formatDiff(s.diff)}</span>` },
+    { key: "election_diff", label: `State election`, fmt: (s) => `<span class="${diffClass(s.election?.diff)}">${formatDiff(s.election?.diff)}</span>` },
+    { key: "change", label: "Change", fmt: (s) => `<span class="${diffClass(s.change)}">${formatDiff(s.change)}</span>` },
+    { key: "poll_date", label: "Polled", fmt: (s) => formatDate(s.poll_date) },
   ];
 
   function getSortValue(s, key) {
-    if (key === "name") return s.name;
+    // Sort on the displayed English name so the A–Z order matches what's shown.
+    if (key === "name") return stateName(s.id, s.name);
     if (key === "left") return s.left;
     if (key === "right") return s.right;
     if (key === "diff") return s.diff;
@@ -254,7 +258,7 @@ export function renderTable(el, states) {
 
   function compareSortValues(av, bv) {
     if (typeof av === "string" || typeof bv === "string") {
-      return String(av ?? "").localeCompare(String(bv ?? ""), "de");
+      return String(av ?? "").localeCompare(String(bv ?? ""), "en");
     }
     return (av ?? 0) - (bv ?? 0);
   }
