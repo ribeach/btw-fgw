@@ -178,6 +178,8 @@ Behavior:
 
 `MAJOR_PARTIES` in `docs/js/config.js` controls which parties appear in the party chart.
 
+`ELECTION_RESULTS` in `docs/js/config.js` holds the official Bundeswahlleiterin final Zweitstimmen share for each `ELECTION_DATES` entry — `cdu` is CDU/CSU combined from absolute vote counts, 2021 is the re-determined result after the Berlin partial repeat, and 2025 `bsw` is stored as `4.98` (officially 4.981, deliberately sub-threshold so it can never render as `5.0`). The values are fact-checked; never hand-edit them. The "View the numbers" tables render their election rows from this table — parties at stored precision, blocs as one-decimal sums of the member parties with "other" the remainder of the rounded blocs so every row totals exactly 100 — while the `Latest ·` row (always present) carries the smoothed EWMA values; the two are different numbers by design. `config.js` runs a module-load validation (console.warn only, never throw — the page must render on election night): `ELECTION_RESULTS` keys must appear in `ELECTION_DATES`, dates without results are flagged (their rows render em dashes), and 2025 `bsw >= 5` trips the sub-threshold warning. Small divergences from the demographics page for 2021 (originally-published vs re-determined) and 2025 (component-sum vs combined-count) are expected and correct — that page derives from the as-published RWS CSV (`docs/data/demographics.json`), which stays untouched.
+
 ### Demographics page
 
 Entry point and modules:

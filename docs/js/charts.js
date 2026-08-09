@@ -11,6 +11,7 @@ import {
   MAJOR_PARTIES,
   BLOCKS,
   ELECTION_DATES,
+  ELECTION_RESULTS,
   Y_AXIS_HEADROOM,
   MOBILE_BREAKPOINT_PX,
 } from "./config.js";
@@ -25,10 +26,13 @@ import {
   ensurePlotly,
 } from "./shared.js";
 
-// Election rules and their year labels are chrome, not data: bone at low alpha,
-// with the opacity folded into the colour so the shape needs no `opacity` of
-// its own (a shape-level opacity also fades the crosshair spike drawn over it).
-const MARKER_LINE_COLOR = "rgba(243, 241, 236, 0.14)";
+// Election rules and their year labels are chrome, not data: bone ink, dotted
+// so they read as event references and can never be mistaken for the solid
+// hairline grid. The opacity is folded into the colour so the shape needs no
+// `opacity` of its own (a shape-level opacity also fades the crosshair spike
+// drawn over it). Keep this alpha below SPIKE_COLOR's (shared.js): the
+// interactive crosshair must always read above the static rules.
+const MARKER_LINE_COLOR = "rgba(243, 241, 236, 0.32)";
 const MARKER_LABEL_COLOR = "rgba(243, 241, 236, 0.55)";
 
 
@@ -77,7 +81,7 @@ function buildElectionMarkers(isMobile) {
     y0: 0,
     y1: 1,
     yref: "paper",
-    line: { color: MARKER_LINE_COLOR, width: 1 },
+    line: { color: MARKER_LINE_COLOR, width: 1, dash: "dot" },
   }));
 
   // Rules stay for every election; labels are desktop-only — at phone widths
@@ -329,31 +333,77 @@ function cell(tag, scope, text, className) {
 }
 
 /**
- * Fill a <table> with the tabular equivalent of a chart: one row per federal
- * election plus the latest reading, one column per series. Same smoothed
- * numbers the lines are drawn from, so the table and the picture cannot drift.
+ * Official share for one table column at one election, or null when there is
+ * nothing official to show — the date has no ELECTION_RESULTS entry yet, or
+ * the party did not stand. Party columns are a direct ELECTION_RESULTS lookup
+ * at stored precision. Bloc columns sum their member parties (membership from
+ * PARTY_CONFIG.block, matching computeBlocks), each named bloc rounded to the
+ * table's one decimal — summing one-decimal components manufactures false
+ * precision (1990's left would print 40.95) — and "other" is the remainder to
+ * 100 of the ROUNDED named blocs, so unlisted small parties are never dropped
+ * and every bloc row sums to exactly 100.
+ */
+function electionValue(key, dateStr) {
+  const results = ELECTION_RESULTS[dateStr];
+  if (!results) return null;
+  if (key in BLOCKS) {
+    const round1 = (value) => Math.round(value * 10) / 10;
+    const blocTotal = (block) =>
+      round1(
+        Object.entries(results).reduce(
+          (sum, [party, share]) => (PARTY_CONFIG[party]?.block === block ? sum + share : sum),
+          0
+        )
+      );
+    const named = Object.keys(BLOCKS).filter((block) => block !== "other");
+    if (key === "other") return round1(named.reduce((rest, block) => rest - blocTotal(block), 100));
+    return blocTotal(key);
+  }
+  return Number.isFinite(results[key]) ? results[key] : null;
+}
+
+/**
+ * Table number formatting. Non-finite (party did not stand, or no official
+ * result for the date) → em dash. Exact values keep a genuine second decimal:
+ * BSW's 4.98% in 2025 must not round up to a "5.0" that would imply the
+ * five-percent threshold was reached. Pass `exact = false` for smoothed poll
+ * readings, which stay at the one decimal the rest of the page uses.
+ */
+function formatShare(value, exact = true) {
+  if (!Number.isFinite(value)) return "—";
+  if (!exact) return value.toFixed(1);
+  return Math.round(value * 100) % 10 === 0 ? value.toFixed(1) : value.toFixed(2);
+}
+
+/**
+ * Fill a <table> with the tabular counterpart of a chart: one row per federal
+ * election plus the latest reading, one column per series. Election rows carry
+ * the official second-vote result (ELECTION_RESULTS) — not a poll reading —
+ * while the latest row repeats the smoothed numbers the lines are drawn from.
  *
  * @param {HTMLTableElement|null} table
  * @param {{dates: Date[], series: object[]}} chart  a render function's return value
+ * @param {string} captionText  visually-hidden caption; per-table, because the
+ *   parties and blocs tables derive their election rows differently
  */
-export function renderChartTable(table, { dates, series } = {}) {
+export function renderChartTable(table, { dates, series } = {}, captionText) {
   if (!table || !Array.isArray(dates) || !dates.length || !series || !series.length) return;
 
   const rows = [];
   for (const dateStr of ELECTION_DATES) {
     const index = indexAtOrBefore(dates, Date.parse(`${dateStr}T00:00:00Z`));
     if (index < 0) continue;
-    rows.push({ label: `${dateStr.slice(0, 4)} election`, index });
+    rows.push({ label: `${dateStr.slice(0, 4)} election`, index, dateStr });
   }
+  // The latest smoothed reading always gets its own row — even when the series
+  // ends on (or before) an election day, the official result and the poll
+  // average are different numbers and both belong in the table.
   const latestIndex = dates.length - 1;
-  if (!rows.length || rows[rows.length - 1].index !== latestIndex) {
-    rows.push({ label: `Latest · ${shortDate(dates[latestIndex])}`, index: latestIndex });
-  }
+  rows.push({ label: `Latest · ${shortDate(dates[latestIndex])}`, index: latestIndex });
 
   const caption = document.createElement("caption");
   caption.className = "visually-hidden";
-  caption.textContent =
-    "Smoothed shares in percent (30-day exponentially weighted average) at each federal election and at the latest reading.";
+  caption.textContent = captionText || "";
 
   const headRow = document.createElement("tr");
   headRow.appendChild(cell("th", "col", "Reading"));
@@ -366,8 +416,12 @@ export function renderChartTable(table, { dates, series } = {}) {
     const tr = document.createElement("tr");
     tr.appendChild(cell("th", "row", row.label));
     for (const s of series) {
-      const value = s.values[row.index];
-      tr.appendChild(cell("td", null, Number.isFinite(value) ? value.toFixed(1) : "—", "tnum"));
+      // Election rows show the stored official result (two decimals preserved
+      // where significant); the latest row is a smoothed poll estimate.
+      const text = row.dateStr
+        ? formatShare(electionValue(s.key, row.dateStr))
+        : formatShare(s.values[row.index], false);
+      tr.appendChild(cell("td", null, text, "tnum"));
     }
     tbody.appendChild(tr);
   }
