@@ -27,7 +27,7 @@ async function init() {
     renderTable(document.getElementById("table-container"), data.states);
 
     const updatedDate = new Date(data.updated);
-    statusEl.innerHTML = `<span>Daten aktualisiert: ${updatedDate.toLocaleDateString("de-DE", {
+    statusEl.innerHTML = `<span>Data updated: ${updatedDate.toLocaleDateString("en-GB", {
       year: "numeric",
       month: "long",
       day: "numeric",
