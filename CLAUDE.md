@@ -142,14 +142,17 @@ Treat `docs/data/demographics.json` as the frontend source of truth. Any regener
 
 ### Shared
 
-- `docs/css/style.css` contains the shared styling for all three pages.
+The design direction is "election night, printed": chrome is achromatic (ink surfaces, bone text) and **color only ever encodes data** — a party, a bloc, or the diverging map scale. Do not introduce chromatic UI accents.
+
+- `docs/css/style.css` contains the shared styling for all three pages, including the design tokens in `:root` (ink/bone colors, 4px spacing scale, type scale) and the flat `.panel` treatment. Panels are opaque on purpose — the old glassmorphism washed out whenever the backdrop failed.
 - `docs/js/config.js` is the shared federal-party config:
-  - labels
-  - colors
-  - block membership
-  - election marker dates
-  - EWMA halflife (`30` days)
-- `docs/fonts/` and `docs/js/vendor/plotly.min.js` are self-hosted.
+  - labels and official party colors (semantic — never re-hue; `cdu`/`bsw` have `lineColor` escapes for dark-surface contrast only)
+  - `BLOC_COLORS` (left = red `#D92121`, right = blue `#004B87`) — shared by the federal blocks chart AND the state maps; the two pages must never disagree on bloc polarity again
+  - block membership, election marker dates, EWMA halflife (`30` days)
+- `docs/js/shared.js` — Plotly theme/config (reads CSS tokens at module load; modebar is hover-only) plus the pixel-based end-label engine (`layoutEndLabels`, `buildEndLabelAnnotations`, `inlineEndLabel`, `measureRightMargin`) used by the federal and demographics charts.
+- `docs/js/shell.js` — `renderSpectrum()` fills the masthead spectrum bar; each page feeds its own stat (federal: latest projection; demographics: 2025 election result; state: unweighted 16-state mean) with a mandatory caption, so the differing numbers are labeled.
+- All three pages share the same shell: skip link, sticky masthead (wordmark "Sonntagsfrage", underline nav with `aria-current`, `#status` stamp, spectrum bar), and a 3-column Data / Method / Code footer. Edit the shell in all three HTML files together.
+- `docs/fonts/` (Inter + Fira Sans Condensed 700, SIL OFL 1.1 — display face for headlines/numerals only) and `docs/js/vendor/plotly.min.js` are self-hosted. `docs/favicon.svg` is the bloc-band mark.
 
 ### Federal polling page
 
@@ -217,7 +220,9 @@ Behavior:
   - a change-vs-election map
   - a sortable table
 - Uses direct DOM/SVG manipulation rather than Plotly for the maps
-- Colors are derived from a diverging scale centered at `0`, with config in `state-polling-config.js`
+- Colors are derived from a diverging scale centered at `0` (bloc endpoints from `BLOC_COLORS` in `config.js`; sqrt transfer), with **separate domains per map** — ±45pp for current polling, ±25pp for change — and each map's discrete legend is generated in JS from the same `diffToColor` function so legend and fills cannot drift
+- States with `is_fallback: true` are hatched on the maps and daggered/dimmed in the table — keep that marking when touching the render path
+- The maps are keyboard-operable (focusable paths, Escape hides the tooltip) and the table preserves sort focus and announces sorts via a live region — these are deliberate a11y contracts, not decoration
 
 All three pages are in English. The state page's UI copy is English while German party names (`SPD`, `Grüne`, `Die Linke`, `AfD`, `CDU/CSU`) stay as-is, matching `docs/js/config.js`. Bundesland names are anglicized in the frontend only: `STATE_NAMES` in `state-polling-config.js` maps each `DE-XX` id to its English display name (`DE-BY` → `Bavaria`), and `stateName(id, fallback)` is the single accessor used by the table, tooltips, SVG `<title>`s, and summary cards. This mapping deliberately lives in the frontend and not in the pipeline. The German `name` in `docs/data/state-polling.json` originates in the committed, hand-maintained `scripts/state_election_results.json` and is copied through by `scripts/fetch_state_data.py` (dawum only supplies a `Shortcut` abbreviation as a fallback that never fires in practice). Those names stay German so they keep matching the official election records they were transcribed from; display language is a frontend concern. `stateName` falls back to the JSON's German `name` for an unknown id. Dates use the `en-GB` locale and name sorting uses `localeCompare(..., "en")` on the English display name, so the visible A–Z order matches what is rendered.
 
