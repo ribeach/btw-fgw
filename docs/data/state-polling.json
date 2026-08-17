@@ -1,9 +1,9 @@
 {
-  "updated": "2026-08-16T06:26:50Z",
+  "updated": "2026-08-17T06:38:41Z",
   "source": "dawum.de (ODC-ODbL)",
   "summary": {
-    "avg_diff": -13.7,
-    "west_avg": -12.4,
+    "avg_diff": -14.2,
+    "west_avg": -13.0,
     "east_avg": -19.1,
     "max_state": "DE-HH",
     "max_state_name": "Hamburg",
@@ -32,17 +32,17 @@
     {
       "id": "DE-BY",
       "name": "Bayern",
-      "left": 23.0,
-      "right": 56.0,
-      "diff": -33.0,
-      "poll_date": "2026-07-18",
+      "left": 22.0,
+      "right": 58.0,
+      "diff": -36.0,
+      "poll_date": "2026-08-14",
       "election": {
         "date": "2023-10-08",
         "left": 24.3,
         "right": 51.6,
         "diff": -27.3
       },
-      "change": -5.7,
+      "change": -8.7,
       "is_fallback": false
     },
     {
