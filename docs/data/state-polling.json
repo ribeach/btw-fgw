@@ -1,9 +1,9 @@
 {
-  "updated": "2026-08-19T06:31:12Z",
+  "updated": "2026-08-21T06:33:18Z",
   "source": "dawum.de (ODC-ODbL)",
   "summary": {
-    "avg_diff": -14.2,
-    "west_avg": -13.0,
+    "avg_diff": -14.4,
+    "west_avg": -13.3,
     "east_avg": -19.1,
     "max_state": "DE-HH",
     "max_state_name": "Hamburg",
@@ -80,10 +80,10 @@
     {
       "id": "DE-HB",
       "name": "Bremen",
-      "left": 50.0,
-      "right": 39.0,
+      "left": 49.0,
+      "right": 38.0,
       "diff": 11.0,
-      "poll_date": "2026-03-19",
+      "poll_date": "2026-08-19",
       "election": {
         "date": "2023-05-14",
         "left": 52.6,
@@ -176,18 +176,18 @@
     {
       "id": "DE-RP",
       "name": "Rheinland-Pfalz",
-      "left": 38.2,
-      "right": 50.5,
-      "diff": -12.3,
-      "poll_date": "2026-03-22",
+      "left": 35.0,
+      "right": 52.0,
+      "diff": -17.0,
+      "poll_date": "2026-08-20",
       "election": {
         "date": "2026-03-22",
         "left": 38.2,
         "right": 50.5,
         "diff": -12.3
       },
-      "change": 0.0,
-      "is_fallback": true
+      "change": -4.7,
+      "is_fallback": false
     },
     {
       "id": "DE-SL",
