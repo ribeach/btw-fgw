@@ -1,10 +1,10 @@
 {
-  "updated": "2026-09-01T10:54:30Z",
+  "updated": "2026-09-02T10:20:35Z",
   "source": "dawum.de (ODC-ODbL)",
   "summary": {
     "avg_diff": -14.4,
     "west_avg": -13.3,
-    "east_avg": -19.1,
+    "east_avg": -19.2,
     "max_state": "DE-HH",
     "max_state_name": "Hamburg",
     "max_diff": 33.7,
@@ -128,17 +128,17 @@
     {
       "id": "DE-MV",
       "name": "Mecklenburg-Vorpommern",
-      "left": 45.2,
-      "right": 45.7,
-      "diff": -0.5,
-      "poll_date": "2026-08-13",
+      "left": 44.6,
+      "right": 46.4,
+      "diff": -1.7,
+      "poll_date": "2026-09-02",
       "election": {
         "date": "2021-09-26",
         "left": 55.8,
         "right": 30.0,
         "diff": 25.8
       },
-      "change": -26.3,
+      "change": -27.5,
       "is_fallback": false
     },
     {
