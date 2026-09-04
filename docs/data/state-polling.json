@@ -1,10 +1,10 @@
 {
-  "updated": "2026-09-03T10:30:25Z",
+  "updated": "2026-09-04T10:18:52Z",
   "source": "dawum.de (ODC-ODbL)",
   "summary": {
     "avg_diff": -14.4,
     "west_avg": -13.3,
-    "east_avg": -19.3,
+    "east_avg": -19.2,
     "max_state": "DE-HH",
     "max_state_name": "Hamburg",
     "max_diff": 33.7,
@@ -224,17 +224,17 @@
     {
       "id": "DE-ST",
       "name": "Sachsen-Anhalt",
-      "left": 25.1,
-      "right": 64.4,
-      "diff": -39.3,
-      "poll_date": "2026-09-02",
+      "left": 25.5,
+      "right": 64.6,
+      "diff": -39.1,
+      "poll_date": "2026-09-03",
       "election": {
         "date": "2021-06-06",
         "left": 25.3,
         "right": 57.9,
         "diff": -32.6
       },
-      "change": -6.7,
+      "change": -6.5,
       "is_fallback": false
     },
     {
