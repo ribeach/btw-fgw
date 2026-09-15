@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-13T10:53:31Z",
+  "updated": "2026-09-15T10:48:11Z",
   "source": "dawum.de (ODC-ODbL)",
   "summary": {
     "avg_diff": -13.8,
@@ -48,17 +48,17 @@
     {
       "id": "DE-BE",
       "name": "Berlin",
-      "left": 48.9,
-      "right": 37.4,
-      "diff": 11.4,
-      "poll_date": "2026-09-11",
+      "left": 48.7,
+      "right": 37.5,
+      "diff": 11.2,
+      "poll_date": "2026-09-14",
       "election": {
         "date": "2023-02-12",
         "left": 49.0,
         "right": 37.3,
         "diff": 11.7
       },
-      "change": -0.3,
+      "change": -0.5,
       "is_fallback": false
     },
     {
