@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-15T10:48:11Z",
+  "updated": "2026-09-16T10:37:12Z",
   "source": "dawum.de (ODC-ODbL)",
   "summary": {
     "avg_diff": -13.8,
@@ -128,17 +128,17 @@
     {
       "id": "DE-MV",
       "name": "Mecklenburg-Vorpommern",
-      "left": 47.5,
-      "right": 44.1,
-      "diff": 3.4,
-      "poll_date": "2026-09-11",
+      "left": 47.8,
+      "right": 44.3,
+      "diff": 3.5,
+      "poll_date": "2026-09-16",
       "election": {
         "date": "2021-09-26",
         "left": 55.8,
         "right": 30.0,
         "diff": 25.8
       },
-      "change": -22.4,
+      "change": -22.3,
       "is_fallback": false
     },
     {
