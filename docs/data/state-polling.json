@@ -1,13 +1,13 @@
 {
-  "updated": "2026-09-30T11:42:55Z",
+  "updated": "2026-10-01T12:11:42Z",
   "source": "dawum.de (ODC-ODbL)",
   "summary": {
     "avg_diff": -13.7,
-    "west_avg": -12.5,
+    "west_avg": -12.4,
     "east_avg": -18.9,
     "max_state": "DE-HH",
     "max_state_name": "Hamburg",
-    "max_diff": 33.7,
+    "max_diff": 35.8,
     "min_state": "DE-SN",
     "min_state_name": "Sachsen",
     "min_diff": -42.0
@@ -97,16 +97,16 @@
       "id": "DE-HH",
       "name": "Hamburg",
       "left": 62.0,
-      "right": 28.3,
-      "diff": 33.7,
-      "poll_date": "2026-06-20",
+      "right": 26.2,
+      "diff": 35.8,
+      "poll_date": "2026-09-30",
       "election": {
         "date": "2025-03-02",
         "left": 63.2,
         "right": 27.3,
         "diff": 35.9
       },
-      "change": -2.2,
+      "change": -0.1,
       "is_fallback": false
     },
     {
