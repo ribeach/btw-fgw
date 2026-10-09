@@ -1,10 +1,10 @@
 {
-  "updated": "2026-10-08T12:35:37Z",
+  "updated": "2026-10-09T12:23:19Z",
   "source": "dawum.de (ODC-ODbL)",
   "summary": {
-    "avg_diff": -13.7,
+    "avg_diff": -13.6,
     "west_avg": -12.4,
-    "east_avg": -18.9,
+    "east_avg": -18.6,
     "max_state": "DE-HH",
     "max_state_name": "Hamburg",
     "max_diff": 35.8,
@@ -48,17 +48,17 @@
     {
       "id": "DE-BE",
       "name": "Berlin",
-      "left": 48.9,
-      "right": 37.8,
-      "diff": 11.2,
-      "poll_date": "2026-09-18",
+      "left": 49.5,
+      "right": 37.1,
+      "diff": 12.4,
+      "poll_date": "2026-10-08",
       "election": {
         "date": "2023-02-12",
         "left": 49.0,
         "right": 37.3,
         "diff": 11.7
       },
-      "change": -0.5,
+      "change": 0.7,
       "is_fallback": false
     },
     {
