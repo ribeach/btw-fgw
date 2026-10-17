@@ -1,9 +1,9 @@
 {
-  "updated": "2026-10-16T10:26:29Z",
+  "updated": "2026-10-17T09:58:01Z",
   "source": "dawum.de (ODC-ODbL)",
   "summary": {
-    "avg_diff": -13.3,
-    "west_avg": -11.9,
+    "avg_diff": -12.3,
+    "west_avg": -10.7,
     "east_avg": -19.2,
     "max_state": "DE-HH",
     "max_state_name": "Hamburg",
@@ -160,17 +160,17 @@
     {
       "id": "DE-NW",
       "name": "Nordrhein-Westfalen",
-      "left": 39.8,
-      "right": 50.8,
-      "diff": -10.9,
-      "poll_date": "2026-09-23",
+      "left": 42.3,
+      "right": 48.5,
+      "diff": -6.2,
+      "poll_date": "2026-10-16",
       "election": {
         "date": "2022-05-15",
         "left": 47.0,
         "right": 41.1,
         "diff": 5.9
       },
-      "change": -16.8,
+      "change": -12.1,
       "is_fallback": false
     },
     {
