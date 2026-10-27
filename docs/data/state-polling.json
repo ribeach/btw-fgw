@@ -1,9 +1,9 @@
 {
-  "updated": "2026-10-26T12:01:57Z",
+  "updated": "2026-10-27T11:22:00Z",
   "source": "dawum.de (ODC-ODbL)",
   "summary": {
-    "avg_diff": -11.9,
-    "west_avg": -10.2,
+    "avg_diff": -11.4,
+    "west_avg": -9.5,
     "east_avg": -19.2,
     "max_state": "DE-HH",
     "max_state_name": "Hamburg",
@@ -112,17 +112,17 @@
     {
       "id": "DE-HE",
       "name": "Hessen",
-      "left": 35.1,
-      "right": 52.0,
-      "diff": -16.9,
-      "poll_date": "2026-04-29",
+      "left": 38.0,
+      "right": 48.1,
+      "diff": -10.1,
+      "poll_date": "2026-10-27",
       "election": {
         "date": "2023-10-08",
         "left": 33.0,
         "right": 53.0,
         "diff": -20.0
       },
-      "change": 3.1,
+      "change": 9.9,
       "is_fallback": false
     },
     {
