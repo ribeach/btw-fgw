@@ -1,9 +1,9 @@
 {
-  "updated": "2026-11-04T13:35:44Z",
+  "updated": "2026-11-05T13:48:40Z",
   "source": "dawum.de (ODC-ODbL)",
   "summary": {
-    "avg_diff": -11.4,
-    "west_avg": -9.5,
+    "avg_diff": -11.3,
+    "west_avg": -9.3,
     "east_avg": -19.3,
     "max_state": "DE-HH",
     "max_state_name": "Hamburg",
@@ -192,17 +192,17 @@
     {
       "id": "DE-SL",
       "name": "Saarland",
-      "left": 41.0,
-      "right": 48.0,
-      "diff": -7.0,
-      "poll_date": "2025-12-03",
+      "left": 48.0,
+      "right": 41.0,
+      "diff": 7.0,
+      "poll_date": "2026-11-04",
       "election": {
         "date": "2022-03-27",
         "left": 51.1,
         "right": 34.2,
         "diff": 16.9
       },
-      "change": -23.9,
+      "change": -9.9,
       "is_fallback": false
     },
     {
